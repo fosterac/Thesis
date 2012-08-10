@@ -1,40 +1,21 @@
-class Problem {
-public:
+namespace Problem{
 
-	//typedef double (*FUNCTION)(const std::vector<double> &);
+	//Use variant here...
 	typedef boost::function<double (const std::vector<double> &)> FUNCTION;
 
-	std::vector< FUNCTION > Objectives;
-	std::vector< FUNCTION > Constraints;
+	struct Interface {
 
-	int dimDesign;
-	int dimObj;
+		std::vector< FUNCTION > Objectives;
+		std::vector< FUNCTION > Constraints;
 
-	std::vector< double > lowerBounds;
-	std::vector< double > upperBounds;
+		int dimDesign;
+		int dimObj;
 
-	//Func eval odometer?
-};
+		std::vector< double > lowerBounds;
+		std::vector< double > upperBounds;
 
-/*
-class Factory{
-public:
-	static 
-};*/
+		//Func eval odometer?
+	};
 
-class Basin : public Problem{
-private:
-	double obj(const std::vector< double > &);
-public:
-	Basin(int DimObj, int DimDesign);
-};
-
-
-/*
-class Basin : public Problem {
-public:
-	Basin(int DimObj);
-	~Basin();
-private:
-	BasinImpl * impl;
-}*/
+	Interface * Factory( std::string, int, int );
+}

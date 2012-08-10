@@ -3,6 +3,7 @@
 #include <boost/bind.hpp>
 #include <boost/function.hpp>
 
+#include <string>
 
 #include "Problems.h"
 
@@ -11,23 +12,18 @@ namespace helpers {
 	double square( double l, double r )	{ return l + (r) * (r); }
 }
 
-//using namespace boost::bind;
-
-//class Basin : public Problem {
-
-//private:
-	double Basin::obj(const std::vector< double > &x){
+//Simple quadratic problem
+class Basin : public Problem::Interface{
+private:
+	double obj(const std::vector< double > &x){
 		return std::accumulate(x.begin(), x.end(), 0.0, helpers::square);
 	}
-
-//public:
-	Basin::Basin(int DimObj, int DimDesign)	{
+public:
+	Basin(int DimObj, int DimDesign)	{
 
 		//Problem::FUNCTION f = obj;
-		boost::function<double (const std::vector<double> &)> FUNC( boost::bind(&Basin::obj, this, _1) );
-		//Problem::FUNCTION f = *FUNC.target<Problem::FUNCTION>();
-		this->Objectives.push_back(	FUNC	);
-		//this->Objectives.push_back(	f	);
+		boost::function<double (const std::vector<double> &)> f( boost::bind(&Basin::obj, this, _1) );
+		this->Objectives.push_back(	f );
 
 		this->dimObj = DimObj;
 		this->dimDesign = DimDesign;
@@ -38,12 +34,15 @@ namespace helpers {
 			this->upperBounds.push_back( 1.0 );
 		}
 	}
+};
 
-//};
-/*
-Basin::Basin(int DimObj){
-	this->impl = new BasinImpl(DimObj);
+Problem::Interface * Problem::Factory( std::string s, int DimObj, int DimDesign){
+	Interface * toReturn;
+	//Instantiate a simple Basin problem
+	if ( s.compare(std::string("BASIN")) == 0 ){
+		toReturn = new Basin(DimObj, DimDesign);
+	}
+	else toReturn = NULL;
+
+	return toReturn;
 }
-Basin::~Basin(){
-	delete this->impl;
-}*/

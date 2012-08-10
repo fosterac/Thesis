@@ -35,7 +35,8 @@ TEST_F(LambdaTest, Alive) {
 TEST_F(LambdaTest, WrapProblem) {
 	for_each(v.begin(), v.end(), cout << _1 << '\n');
 
-	Problem * P = new Basin(1, 3);
+	//Problem * P = new Basin(1, 3);
+	Problem::Interface * P = Problem::Factory("BASIN", 1, 3);
 	cout << (P->Objectives[0]) (v) << endl;
 
 }

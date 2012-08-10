@@ -64,9 +64,10 @@ TEST(NLOPTTest, Alive) {
 
 TEST(NLOPTTest, Problem) {
 
-	int DesignVars = 100;
+	int DesignVars = 10;
 
-	Problem * P = new Basin(1, DesignVars);
+	//Problem * P = new Basin(1, DesignVars);
+	Problem::Interface * P = Problem::Factory("BASIN", 1, DesignVars);
 
 	nlopt::opt opt(nlopt::LD_SLSQP, DesignVars);
 
@@ -75,7 +76,7 @@ TEST(NLOPTTest, Problem) {
 
 	NloptAdapt<Problem::FUNCTION> NA(P->Objectives[0], .000001);
 
-	opt.set_min_objective(&::NloptAdapt<Problem::FUNCTION>::iface, (void*)&NA);
+	opt.set_min_objective(&::NloptAdapt<typename Problem::FUNCTION>::iface, (void*)&NA);
 
 	opt.set_xtol_rel(1e-4);
 
