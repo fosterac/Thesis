@@ -21,8 +21,7 @@ private:
 public:
 	Basin(int DimObj, int DimDesign)	{
 
-		//Problem::FUNCTION f = obj;
-		boost::function<double (const std::vector<double> &)> f( boost::bind(&Basin::obj, this, _1) );
+		typename Problem::FUNCTION f( boost::bind(&Basin::obj, this, _1) );
 		this->Objectives.push_back(	f );
 
 		this->dimObj = DimObj;

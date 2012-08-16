@@ -9,7 +9,7 @@ private:
 	T &obj;
 	double eval(const std::vector<double> &at){	return (this->obj)(at);	}
 
-	//Elements to do manually perform finite differences
+	//Elements to manually perform finite differences
 	//Should probably offload to another class...
 	double fd_step;
 	//Central difference quotient
