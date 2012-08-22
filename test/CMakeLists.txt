@@ -1,5 +1,7 @@
 include_directories(${CMAKE_SOURCE_DIR}/src)
 include_directories(${CMAKE_SOURCE_DIR}/dependencies)
+include_directories(${CMAKE_SOURCE_DIR}/dependencies/gtest-1.6.0/include)
+include_directories(${CMAKE_SOURCE_DIR}/dependencies/nlopt-2.3/api)
 
 enable_testing()
 
