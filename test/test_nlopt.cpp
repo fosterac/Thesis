@@ -4,11 +4,9 @@
 
 #include <math.h>
 #include <cstdio>
+#include <vector>
 
 #include <nlopt.hpp>
-
-#include <boost/function.hpp>
-#include "Problems.h"
 
 namespace {
 
@@ -59,31 +57,4 @@ TEST(NLOPTTest, Alive) {
 	printf("found minimum at f(%g,%g) = %0.10g\n", x[0], x[1], minf);
 	}
 
-// Tests that the problem interface works
-#include "NloptAdapt.hpp"
-
-TEST(NLOPTTest, Problem) {
-
-	int DesignVars = 10;
-
-	//Problem * P = new Basin(1, DesignVars);
-	Problem::Interface * P = Problem::Factory("BASIN", 1, DesignVars);
-
-	nlopt::opt opt(nlopt::LD_SLSQP, DesignVars);
-
-	opt.set_lower_bounds(P->lowerBounds);
-	opt.set_upper_bounds(P->upperBounds);
-
-	NloptAdapt<Problem::FUNCTION> NA(P->Objectives[0], .000001);
-
-	opt.set_min_objective(&::NloptAdapt<typename Problem::FUNCTION>::iface, (void*)&NA);
-
-	opt.set_xtol_rel(1e-4);
-
-	std::vector<double> x(DesignVars);
-	for(int i=0; i<x.size(); i++) { x[i] = .3; }
-	double minf;
-	nlopt::result result = opt.optimize(x, minf);
-	printf("found minimum at f(%lf,%lf) = %lf\n", x[0], x[1], minf);
-	}
 }  //namespace

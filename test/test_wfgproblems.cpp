@@ -91,8 +91,8 @@ string make_string( const vector< double >& v )
 // processes each front from the file 
 TEST(WFGPROBLEMSTest, Alive) {
     const int M = 2;          // the number of objectives
-    const int k_factor = 2;   // k (# position parameters) = k_factor*( M-1 ) 
-    const int l_factor = 2;   // l (# distance parameters) = l_factor*2
+    const int k_factor = 1;   // k (# position parameters) = k_factor*( M-1 ) 
+    const int l_factor = 1;   // l (# distance parameters) = l_factor*2
 
     srand( 0 );  // seed the random number generator
 
