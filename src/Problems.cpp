@@ -5,6 +5,7 @@
 
 #include <string>
 #include <cassert>
+#include <stdio.h>
 
 #include <iostream>
 
@@ -85,6 +86,13 @@ using namespace WFG::Toolkit::Examples;
 class WFG2 : public Problem::Interface{
 private:
 	double obj(const std::vector< double > &x, const int i, const int k, const int M){
+		//We're seeing an assertion in the WFGProblems code fail 
+		//as the input vectors are "out of bounds" (<0), which is
+		//a result of the finite differences scheme.
+
+		//int j;
+		//for(j=0;j<x.size();j++){ printf("%lf ", x[j]);}
+		//printf("\n");
 		return Problems::WFG2(x, k, M).at(i);
 	}
 public:

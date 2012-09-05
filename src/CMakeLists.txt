@@ -6,3 +6,6 @@ target_link_libraries(Problems wfgProblems)
 
 add_library (Optimizer STATIC optimizer.cpp)
 target_link_libraries(Optimizer nlopt)
+
+add_executable (main main.cpp)
+target_link_libraries(main nlopt Problems Optimizer)

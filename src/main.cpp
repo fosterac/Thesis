@@ -1,53 +1,23 @@
-//Simple test to verify Optimizer class functionality
+/*
 
-#include <gtest/gtest.h>
+Test program showing the general state of functionality
+
+*/
 
 #include <stdio.h>
-
 #include <vector>
+
 #include <boost/function.hpp>
 
 #include "Problems.h"
-
 #include "Scalarization.hpp"
-
 #include <nlopt.hpp>
 #include "NloptAdapt.hpp"
 
-
 #include "optimizer.h"
 
-namespace {
+int main(int argc, char** argv){
 
-// Tests that the optimizer works
-TEST(OPTIMIZERTest, Alive) {
-	
-	int DesignVars = 3;
-
-	//Problem::Interface * P = Problem::Factory("BASIN", 1, DesignVars);
-	Problem::Interface * P = Problem::Factory("FON", 2, DesignVars);
-	
-	Optimizer * op = new OptNlopt(P, 1e-4);
-	
-	std::vector<double> x(DesignVars);
-	int i;
-	for(i=0; i<x.size(); i++) { x[i] = 0.3; }
-	
-	printf("starting at (%lf,%lf,%lf) \n", x[0], x[1], x[2]);
-
-	std::vector<double> w(DesignVars);
-	for(i=0; i<w.size(); i++) { w[i] = 1.0; }
-
-	op->SetWeights(w);
-	double result = op->RunFrom(x);
-	
-	printf("minimum at (%lf,%lf,%lf) ", x[0], x[1], x[2]);
-	printf(" =  %lf\n", result);
-}
-
-//Sample a simple Pareto front
-TEST(OPTIMIZERTest, Shotgun) {
-	
 	//Choose a Problem
 	int DesignVars = 3;
 	Problem::Interface * P = Problem::Factory("FON", 2, DesignVars);
@@ -81,8 +51,9 @@ TEST(OPTIMIZERTest, Shotgun) {
 		double result = op->RunFrom(x);
 
 		//Print the results
-		printf("Point %d: \t %lf, %lf -> (%lf, %lf) = %lf\n", j, w[0], w[1], (P->Objectives[0])(x), (P->Objectives[1])(x), result);
+		//printf("Point %d: \t %lf, %lf -> (%lf, %lf) = %lf\n", j, w[0], w[1], (P->Objectives[0])(x), (P->Objectives[1])(x), result);
+		printf("%lf, %lf\n", (P->Objectives[0])(x), (P->Objectives[1])(x));
 	}
-}
 
-}  //namespace
+	return 0;
+}
