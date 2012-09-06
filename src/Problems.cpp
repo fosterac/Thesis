@@ -129,7 +129,7 @@ Problem::Interface * Problem::Factory( std::string s, int DimObj, int DimDesign)
 	//Instantiate a FON problem
 	if ( s.compare(std::string("FON")) == 0 ){
 		//This only allows one objective
-		assert (DimDesign == 3);
+		//assert (DimDesign == 3);
 		toReturn = new FON(DimObj, DimDesign);
 	}
 	
