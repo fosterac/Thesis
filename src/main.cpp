@@ -23,11 +23,14 @@ int main(int argc, char** argv){
 	Problem::Interface * P = Problem::Factory("FON", 2, DesignVars);
 	//Problem::Interface * P = Problem::Factory("WFG2", 2, DesignVars);
 	
+	//Scalarize the problem
+	FixedScalarization * S = new FixedScalarization(P);
+
 	//Instantiate an optimizer
-	Optimizer * op = new OptNlopt(P, 1e-4);
+	Optimizer * op = new OptNlopt(S, 1e-4);
 
 	//Set up an initial point
-	std::vector<double> x(DesignVars);
+	std::vector<double> x(S->dimDesign);
 	int i;
 	for(i=0; i<DesignVars; i++) { x[i] = 0.5; }
 
@@ -42,7 +45,7 @@ int main(int argc, char** argv){
 		//Set the weights
 		w[0] =  j* 1.0/(double)(NumPts-1);
 		w[1] = 1.0 - w[0];
-		op->SetWeights(w);
+		S->SetWeights(&w);
 		
 		//Re-initialize the starting points
 		//for(i=0; i<DesignVars; i++) { x[i] = 0.5; }

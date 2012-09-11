@@ -25,12 +25,14 @@ TEST(OPTIMIZERTest, Alive) {
 	int DesignVars = 3;
 
 	//Problem::Interface * P = Problem::Factory("BASIN", 1, DesignVars);
-	Problem::Interface * P = Problem::Factory("FON", 2, DesignVars+1);
-	
-	Optimizer * op = new OptNlopt(P, 1e-4);
+	Problem::Interface * P = Problem::Factory("FON", 2, DesignVars);
+
+	DynamicScalarization S(P);
+
+	Optimizer * op = new OptNlopt(&S, 1e-4);
 	
 	printf("starting at: ");
-	std::vector<double> x(DesignVars+1);
+	std::vector<double> x(S.dimDesign);
 	int i;
 	for(i=0; i<x.size(); i++) { 
 		x[i] = 0.3;
@@ -38,9 +40,9 @@ TEST(OPTIMIZERTest, Alive) {
 	}
 
 	std::vector<double> w(P->Objectives.size());
-	for(i=0; i<w.size(); i++) { w[i] = 1.0; }
+	for(i=0; i<w.size(); i++) { w[i] = 0.5; }
 
-	op->SetWeights(w);
+	//S.SetWeights(&w);
 	double result = op->RunFrom(x);
 	
 	printf("minimum at: ");

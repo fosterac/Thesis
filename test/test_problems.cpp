@@ -54,15 +54,15 @@ TEST(PROBLEMSTest, MultiObjective) {
 	opt.set_lower_bounds(P->lowerBounds);
 	opt.set_upper_bounds(P->upperBounds);
 
-	Scalarization<Problem::FUNCTION> s( P->Objectives );
+	FixedScalarization s( P );
 	std::vector<double> weights;
 	weights.push_back(1.0);
 	weights.push_back(1.0);
 	s.SetWeights(&weights);
 
-	NloptAdapt< Scalarization<Problem::FUNCTION> > NA(s, .000001);
+	NloptAdapt< Scalarization > NA(s, .000001);
 
-	opt.set_min_objective(&NloptAdapt< Scalarization<Problem::FUNCTION> >::iface, (void*)&NA);
+	opt.set_min_objective(&NloptAdapt< Scalarization >::iface, (void*)&NA);
 
 	opt.set_xtol_rel(1e-4);
 

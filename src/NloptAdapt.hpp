@@ -6,7 +6,7 @@ template<typename T>
 class NloptAdapt{
 private:
 	//Templated function object:  could be boost::function, lambda, functor, etc.
-	T &obj;
+	T & obj;
 	double eval(const std::vector<double> &at){	return (this->obj)(at);	}
 
 	//Elements to manually perform finite differences
