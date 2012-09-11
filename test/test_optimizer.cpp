@@ -38,6 +38,7 @@ TEST(OPTIMIZERTest, Alive) {
 		x[i] = 0.3;
 		printf("%lf ", x[i]);
 	}
+	printf("\n");
 
 	std::vector<double> w(P->Objectives.size());
 	for(i=0; i<w.size(); i++) { w[i] = 0.5; }

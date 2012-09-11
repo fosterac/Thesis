@@ -27,7 +27,7 @@ public:
 
 	//operator () overload
 	double operator() (const std::vector<double> &x){
-		return (eval(x));
+		return (this->eval(x));
 	}
 };
 
