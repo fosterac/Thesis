@@ -28,6 +28,7 @@ TEST(OPTIMIZERTest, Alive) {
 	Problem::Interface * P = Problem::Factory("FON", 2, DesignVars);
 
 	DynamicScalarization S(P);
+	//FixedScalarization S(P);
 
 	Optimizer * op = new OptNlopt(&S, 1e-4);
 	
@@ -38,6 +39,7 @@ TEST(OPTIMIZERTest, Alive) {
 		x[i] = 0.3;
 		printf("%lf ", x[i]);
 	}
+	printf("\n");
 
 	std::vector<double> w(P->Objectives.size());
 	for(i=0; i<w.size(); i++) { w[i] = 0.5; }
