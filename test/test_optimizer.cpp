@@ -28,6 +28,7 @@ TEST(OPTIMIZERTest, Alive) {
 	Problem::Interface * P = Problem::Factory("FON", 2, DesignVars);
 
 	DynamicScalarization S(P);
+	//FixedScalarization S(P);
 
 	Optimizer * op = new OptNlopt(&S, 1e-4);
 	

@@ -1,7 +1,7 @@
 /*
 Scalarizing adapter allowing dynamic weight changes
 */
-
+#include <boost/bind.hpp>
 #include <cassert>
 
 //The public interface is quite similar to the Problem::Interface
@@ -11,18 +11,22 @@ protected:
 	virtual double eval(const std::vector<double> &x) =0;
 	Problem::Interface * P;
 public:
+	Problem::FUNCTION f;
+	std::vector< Problem::FUNCTION > EqualityConstraints;
+	std::vector< Problem::FUNCTION > InequalityConstraints;
+
 	int dimDesign;
 	int dimObj;
 
 	std::vector< double > lowerBounds;
 	std::vector< double > upperBounds;
 
-	Scalarization(Problem::Interface * p) : P(p) {
+	Scalarization(Problem::Interface * p) : P(p), f(boost::bind( &Scalarization::eval, this, _1) ),
+											lowerBounds(P->lowerBounds), upperBounds(P->upperBounds),
+											EqualityConstraints(P->EqualityConstraints),
+											InequalityConstraints(P->InequalityConstraints){
 		this->dimObj = 1;
 		this->dimDesign = P->dimDesign;
-
-		this->lowerBounds.assign(P->lowerBounds.begin(), P->lowerBounds.end() );
-		this->upperBounds.assign(P->upperBounds.begin(), P->upperBounds.end() );
 	}
 
 	//operator () overload

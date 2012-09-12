@@ -6,7 +6,8 @@ namespace Problem{
 	struct Interface {
 
 		std::vector< FUNCTION > Objectives;
-		std::vector< FUNCTION > Constraints;
+		std::vector< FUNCTION > EqualityConstraints;
+		std::vector< FUNCTION > InequalityConstraints;
 
 		int dimDesign;
 		int dimObj;
