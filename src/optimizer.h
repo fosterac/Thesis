@@ -1,12 +1,11 @@
 class Optimizer {
 public:
 	virtual double RunFrom(std::vector< double > &) = 0;
-	//AdjustConstraints
 };
 
 class OptNlopt : public Optimizer {
 private:
-	Scalarization *S;
+	Scalarization< typename Problem::FUNCTION > *S;
 	NloptAdapt< typename Problem::FUNCTION > NA;
 	nlopt::opt opt;
 
@@ -14,6 +13,7 @@ private:
 	std::vector< double > InEqTolerances;
 
 public:
-	OptNlopt(Scalarization *s, double tolerance);
+	//OptNlopt(Scalarization< typename Problem::FUNCTION > *s, double tolerance);
+	OptNlopt(Problem::FUNCTION &Obj, Scalarization< typename Problem::FUNCTION > *s, double tolerance);
 	double RunFrom(std::vector< double > &);
 };

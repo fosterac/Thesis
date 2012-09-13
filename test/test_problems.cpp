@@ -20,7 +20,6 @@ TEST(PROBLEMSTest, SingleObjective) {
 	int DesignVars = 3;
 
 	Problem::Interface * P = Problem::Factory("BASIN", 1, DesignVars);
-	//Problem::Interface * P = Problem::Factory("WFG2", 2, DesignVars);
 
 	nlopt::opt opt(nlopt::LD_SLSQP, DesignVars);
 
@@ -39,7 +38,7 @@ TEST(PROBLEMSTest, SingleObjective) {
 	double minf;
 	nlopt::result result = opt.optimize(x, minf);
 	printf("found minimum at f(%lf,%lf) = %lf\n", x[0], x[1], minf);
-	}
+}
 
 #include "Scalarization.hpp"
 
@@ -47,7 +46,6 @@ TEST(PROBLEMSTest, MultiObjective) {
 
 	int DesignVars = 3;
 
-	//Problem::Interface * P = Problem::Factory("BASIN", 1, DesignVars);
 	Problem::Interface * P = Problem::Factory("FON", 2, DesignVars);
 
 	nlopt::opt opt(nlopt::LD_SLSQP, DesignVars);

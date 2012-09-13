@@ -25,15 +25,17 @@ TEST(OPTIMIZERTest, Alive) {
 	int DesignVars = 3;
 
 	//Problem::Interface * P = Problem::Factory("BASIN", 1, DesignVars);
-	Problem::Interface * P = Problem::Factory("FON", 2, DesignVars);
+	//Problem::Interface * P = Problem::Factory("FON", 2, DesignVars);
+	Problem::Interface * P = Problem::Factory("CONST_TEST", 1, 2);
 
-	DynamicScalarization S(P);
-	//FixedScalarization S(P);
+	//DynamicScalarization< typename Problem::FUNCTION > S(P);
+	FixedScalarization< typename Problem::FUNCTION > S(P);
 
-	Optimizer * op = new OptNlopt(&S, 1e-4);
+	Optimizer * op = new OptNlopt(S.f, &S, 1e-4);
 	
 	printf("starting at: ");
-	std::vector<double> x(S.dimDesign);
+	//std::vector<double> x(S.dimDesign);
+	std::vector<double> x(2);
 	int i;
 	for(i=0; i<x.size(); i++) { 
 		x[i] = 0.3;
