@@ -34,8 +34,8 @@ TEST(OPTIMIZERTest, Alive) {
 	Optimizer * op = new OptNlopt(S.f, &S, 1e-4);
 	
 	printf("starting at: ");
-	//std::vector<double> x(S.dimDesign);
-	std::vector<double> x(2);
+	std::vector<double> x(S.dimDesign);
+	//std::vector<double> x(2);
 	int i;
 	for(i=0; i<x.size(); i++) { 
 		x[i] = 0.3;
