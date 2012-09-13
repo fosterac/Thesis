@@ -13,23 +13,24 @@
 #include "optimizer.h"
 
 //Nlopt-based optimizer
-OptNlopt::OptNlopt(Scalarization * s, double tolerance) : 
-				//S(s), NA(*S, .000001), opt(nlopt::LD_SLSQP, S->dimDesign) {
-				S(s), NA(S->f, S->EqualityConstraints, S->InequalityConstraints, .000001), 
+OptNlopt::OptNlopt(Problem::FUNCTION &Obj, Scalarization< typename Problem::FUNCTION > *s, double tolerance) : 
+//OptNlopt::OptNlopt(Problem::FUNCTION &Obj, T *s, double tolerance) : 
+				S(s), NA(Obj, S->EqualityConstraints, S->InequalityConstraints, .000001), 
 				opt(nlopt::LD_SLSQP, S->dimDesign), 
 				EqTolerances(S->EqualityConstraints.size(), tolerance),
 				InEqTolerances(S->InequalityConstraints.size(), tolerance){
+
 	//Set the state of the optimizer:
-	//require upper & lower bounds
-	opt.set_lower_bounds(S->lowerBounds);
-	opt.set_upper_bounds(S->upperBounds);
+
+	if (!S->lowerBounds.empty()) opt.set_lower_bounds(S->lowerBounds);
+	if (!S->upperBounds.empty()) opt.set_upper_bounds(S->upperBounds);
 	opt.set_xtol_rel(tolerance);
 
 	//Pass a scalarized function through the 
 	//Nlopt Adapter to the Nlopt object
 	opt.set_min_objective(&NloptAdapt< typename Problem::FUNCTION >::ObjIface, (void*)(&(this->NA)));
 
-	//Pass the constraints to the optimizer
+	//Likewise pass the constraints to the optimizer
 	if ( !S->EqualityConstraints.empty() ) {
 		opt.add_equality_mconstraint(&NloptAdapt< typename Problem::FUNCTION >::EqConstrIface, (void*)(&(this->NA)), this->EqTolerances);
 	}

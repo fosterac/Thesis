@@ -16,7 +16,7 @@ namespace helpers {
 	double square( double x )	{ return (x) * (x); }
 }
 
-//Simple quadratic problem
+//Trivial quadratic problem
 class Basin : public Problem::Interface{
 private:
 	double obj(const std::vector< double > &x){
@@ -40,6 +40,49 @@ public:
 };
 
 #include <math.h>
+
+//Trivial constrainted problem (from nlopt tutorial)
+class ConstrainedSR : public Problem::Interface{
+private:
+	int a1, a2, b1, b2;
+
+	double obj(const std::vector< double > &x){
+		return sqrt(x[1]);
+	}
+	double constr1(const std::vector< double > &x){
+		return -1 * x[1];
+	}
+	double constr2(const std::vector< double > &x){
+		return pow(a1*x[0] + b1, 3) - x[1];
+	}
+	double constr3(const std::vector< double > &x){
+		return pow(a2*x[0] + b2, 3) - x[1];
+	}
+public:
+	ConstrainedSR(int DimObj, int DimDesign){
+
+		a1 = 2;
+		a2 = -1;
+
+		b1 = 0;
+		b2 = 1;
+
+		this->dimObj = DimObj;
+		this->dimDesign = DimDesign;
+
+		typename Problem::FUNCTION f( boost::bind(&ConstrainedSR::obj, this, _1) );
+		this->Objectives.push_back(	f );
+
+		typename Problem::FUNCTION c1( boost::bind(&ConstrainedSR::constr1, this, _1) );
+		this->InequalityConstraints.push_back(	c1 );
+
+		typename Problem::FUNCTION c2( boost::bind(&ConstrainedSR::constr2, this, _1) );
+		this->InequalityConstraints.push_back(	c2 );
+
+		typename Problem::FUNCTION c3( boost::bind(&ConstrainedSR::constr3, this, _1) );
+		this->InequalityConstraints.push_back(	c3 );
+	}
+};
 
 //Problem FON from Pereyra 2009
 class FON : public Problem::Interface{
@@ -124,6 +167,14 @@ Problem::Interface * Problem::Factory( std::string s, int DimObj, int DimDesign)
 		//This only allows one objective
 		assert (DimObj == 1);
 		toReturn = new Basin(DimObj, DimDesign);
+	}
+
+	//Instantiate a problem to test constraints
+	if ( s.compare(std::string("CONST_TEST")) == 0 ){
+		//This only allows one objective
+		assert (DimObj == 1);
+		assert (DimDesign == 2);
+		toReturn = new ConstrainedSR(DimObj, DimDesign);
 	}
 
 	//Instantiate a FON problem

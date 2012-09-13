@@ -6,14 +6,15 @@ Scalarizing adapter allowing dynamic weight changes
 
 //The public interface is quite similar to the Problem::Interface
 //and could probably be refactored.
+template< typename T >
 class Scalarization {
 protected:
 	virtual double eval(const std::vector<double> &x) =0;
 	Problem::Interface * P;
 public:
-	Problem::FUNCTION f;
-	std::vector< Problem::FUNCTION > EqualityConstraints;
-	std::vector< Problem::FUNCTION > InequalityConstraints;
+	T f;
+	std::vector< T > EqualityConstraints;
+	std::vector< T > InequalityConstraints;
 
 	int dimDesign;
 	int dimObj;
@@ -21,7 +22,7 @@ public:
 	std::vector< double > lowerBounds;
 	std::vector< double > upperBounds;
 
-	Scalarization(Problem::Interface * p) : P(p), f(boost::bind( &Scalarization::eval, this, _1) ),
+	Scalarization(Problem::Interface * p) : P(p), f(boost::bind( &Scalarization<T>::eval, this, _1) ),
 											lowerBounds(P->lowerBounds), upperBounds(P->upperBounds),
 											EqualityConstraints(P->EqualityConstraints),
 											InequalityConstraints(P->InequalityConstraints){
@@ -35,7 +36,8 @@ public:
 	}
 };
 
-class FixedScalarization : public Scalarization {
+template< typename T >
+class FixedScalarization : public Scalarization< T > {
 protected:
 	std::vector<double> * weights;
 
@@ -53,7 +55,7 @@ protected:
 	}
 
 public:
-	FixedScalarization(Problem::Interface * p) : Scalarization(p), weights(NULL) {
+	FixedScalarization(Problem::Interface * p) : Scalarization<T>(p), weights(NULL) {
 		int i;
 		for(i=0; i<this->P->Objectives.size(); i++) { this->default_weights.push_back(1.0); }
 		this->weights = &(this->default_weights);
@@ -67,7 +69,8 @@ public:
 
 };
 
-class DynamicScalarization : public Scalarization {
+template< typename T >
+class DynamicScalarization : public Scalarization < T > {
 protected:
 	double eval(const std::vector<double> &at){	
 		//Allow for the weights to be part of the optimization
@@ -88,7 +91,7 @@ protected:
 		return result;
 	}
 public:
-	DynamicScalarization(Problem::Interface * p) : Scalarization(p) {
+	DynamicScalarization(Problem::Interface * p) : Scalarization<T>(p) {
 		this->dimDesign = this->P->dimDesign + this->P->Objectives.size() - 1;
 		int i;
 		for(i=0; i<this->P->Objectives.size() - 1; i++) {

@@ -58,3 +58,12 @@ add_test(
     NAME testOptimizer
     COMMAND testOptimizer
 )
+
+add_executable(testMarching
+    test_marching.cpp
+)
+target_link_libraries(testMarching gtest gtest_main nlopt Problems Optimizer )
+add_test(
+    NAME testMarching
+    COMMAND testMarching
+)
