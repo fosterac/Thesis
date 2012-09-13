@@ -86,6 +86,7 @@ protected:
 		int i;
 		for(i=0;i<(this->P->Objectives.size() - 1);i++){
 			result += at[i + offset] * (this->P->Objectives[i])(at);
+			weight_sum += at[i + offset];
 		}
 		result += (1.0 - weight_sum) * (this->P->Objectives[i])(at);
 		return result;

@@ -2,6 +2,8 @@
 Adapter wrapping a function object in the Nlopt library interface
 */
 
+#include "FiniteDifferences.hpp"
+
 template<typename T>
 class NloptAdapt{
 private:
@@ -14,7 +16,7 @@ private:
 	//Should probably offload to another class...
 	double fd_step;
 	//Central difference quotient
-	static double finiteDifference(const int dim, std::vector<double> &at, T& func, const double fd_step){
+	/*static double finiteDifference(const int dim, std::vector<double> &at, T& func, const double fd_step){
 		at[dim] -= fd_step; 
 		double left = eval(func, at);
 		at[dim] += 2*fd_step; 
@@ -22,19 +24,21 @@ private:
 		at[dim] -= fd_step; 
 
 		return (right - left) / (2*fd_step);
-	}
+	}*/
 
 	static double eval( T& func, const std::vector<double> &at){	return (func)(at);	}
 
 	static void gradEval(std::vector<double> &grad, const std::vector<double> &at, T &func, const double fd_step){
 		std::vector<double> local_at(at);
 		int i;
-		for(i=0; i<grad.size(); i++){	grad[i] = finiteDifference(i, local_at, func, fd_step); }
+		//for(i=0; i<grad.size(); i++){	grad[i] = finiteDifference(i, local_at, func, fd_step); }
+		for(i=0; i<at.size(); i++){	grad[i] = FiniteDifferences::Forward<T>(i, local_at, func, -fd_step); }
 	}
 	static void gradEval(double* grad, const std::vector< double > &at, T & func, const double fd_step){
 		std::vector<double> local_at(at);
 		int i;
-		for(i=0; i<at.size(); i++){	grad[i] = finiteDifference(i, local_at, func, fd_step); }
+		//for(i=0; i<at.size(); i++){	grad[i] = finiteDifference(i, local_at, func, fd_step); }
+		for(i=0; i<at.size(); i++){	grad[i] = FiniteDifferences::Forward<T>(i, local_at, func, -fd_step); }
 	}
 
 	static void ConstrIface(unsigned m, double* result, unsigned n, const double* x, double* grad, std::vector< T > &Constr, NloptAdapt *nl){
