@@ -44,8 +44,6 @@ namespace {
 		printf("\n");
 	}
 
-	
-
 	TEST(MARCHINGHOMOTOPY, 2D){
 
 		int Points = 146;

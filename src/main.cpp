@@ -24,10 +24,10 @@ int main(int argc, char** argv){
 	//Problem::Interface * P = Problem::Factory("WFG2", 2, DesignVars);
 	
 	//Scalarize the problem
-	FixedScalarization * S = new FixedScalarization(P);
+	FixedScalarization< typename Problem::FUNCTION > * S = new FixedScalarization< typename Problem::FUNCTION >(P);
 
 	//Instantiate an optimizer
-	Optimizer * op = new OptNlopt(S, 1e-4);
+	Optimizer * op = new OptNlopt(S->f, S, 1e-4);
 
 	//Set up an initial point
 	std::vector<double> x(S->dimDesign);

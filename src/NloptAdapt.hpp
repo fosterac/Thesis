@@ -9,8 +9,8 @@ class NloptAdapt{
 private:
 	//Templated function object:  could be boost::function, lambda, functor, etc.
 	T & obj;
-	std::vector< T > & EqConstr;
-	std::vector< T > & InEqConstr;
+	std::vector< T > * EqConstr;
+	std::vector< T > * InEqConstr;
 
 	//Elements to manually perform finite differences
 	//Should probably offload to another class...
@@ -54,8 +54,8 @@ private:
 	}
 
 public:
-	NloptAdapt(T &Obj, double FD_Step) : obj(Obj), fd_step(FD_Step) {}
-	NloptAdapt(T &Obj, std::vector<T> &EqConstr, std::vector<T> &InEqConstr, double FD_Step) : obj(Obj), EqConstr(EqConstr), InEqConstr(InEqConstr), fd_step(FD_Step) {}
+	NloptAdapt(T &Obj, double FD_Step) : obj(Obj), EqConstr(NULL), InEqConstr(NULL), fd_step(FD_Step) {}
+	NloptAdapt(T &Obj, std::vector<T> *EqConstr, std::vector<T> *InEqConstr, double FD_Step) : obj(Obj), EqConstr(EqConstr), InEqConstr(InEqConstr), fd_step(FD_Step) {}
 
 	//C-style callback interfaces expected by Nlopt
 	static double ObjIface(const std::vector<double> &x, std::vector<double> &grad, void *my_func_data){
@@ -76,11 +76,11 @@ public:
 	static void EqConstrIface(unsigned m, double* result, unsigned n, const double* x, double* grad, void* data){
 		assert ( data != NULL );
 		NloptAdapt *nl = reinterpret_cast<NloptAdapt *>(data);
-		ConstrIface( m, result, n, x, grad, nl->EqConstr, nl);
+		ConstrIface( m, result, n, x, grad, *nl->EqConstr, nl);
 	}
 	static void InEqConstrIface(unsigned m, double* result, unsigned n, const double* x, double* grad, void* data){
 		assert ( data != NULL );
 		NloptAdapt *nl = reinterpret_cast<NloptAdapt *>(data);
-		ConstrIface( m, result, n, x, grad, nl->InEqConstr, nl);
+		ConstrIface( m, result, n, x, grad, *nl->InEqConstr, nl);
 	}
 };

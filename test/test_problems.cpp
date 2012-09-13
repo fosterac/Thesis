@@ -26,9 +26,9 @@ TEST(PROBLEMSTest, SingleObjective) {
 	opt.set_lower_bounds(P->lowerBounds);
 	opt.set_upper_bounds(P->upperBounds);
 
-	NloptAdapt<Problem::FUNCTION> NA(P->Objectives[0], .000001);
+	NloptAdapt< typename Problem::FUNCTION > NA(P->Objectives[0], .000001);
 
-	opt.set_min_objective(&NloptAdapt<typename Problem::FUNCTION>::iface, (void*)&NA);
+	opt.set_min_objective(&NloptAdapt<typename Problem::FUNCTION>::ObjIface, (void*)&NA);
 
 	opt.set_xtol_rel(1e-4);
 
@@ -52,19 +52,19 @@ TEST(PROBLEMSTest, MultiObjective) {
 	opt.set_lower_bounds(P->lowerBounds);
 	opt.set_upper_bounds(P->upperBounds);
 
-	FixedScalarization s( P );
+	FixedScalarization< typename Problem::FUNCTION > s( P );
 	std::vector<double> weights;
 	weights.push_back(1.0);
 	weights.push_back(1.0);
 	s.SetWeights(&weights);
 
-	NloptAdapt< Scalarization > NA(s, .000001);
+	NloptAdapt< typename Problem::FUNCTION > NA(s.f, .000001);
 
-	opt.set_min_objective(&NloptAdapt< Scalarization >::iface, (void*)&NA);
+	opt.set_min_objective(&NloptAdapt< typename Problem::FUNCTION >::ObjIface, (void*)&NA);
 
 	opt.set_xtol_rel(1e-4);
 
-	std::vector<double> x(DesignVars);
+	std::vector<double> x(s.dimDesign);
 	int i;
 	for(i=0; i<x.size(); i++) { x[i] = 0.3; }
 	printf("starting at (%lf,%lf,%lf) \n", x[0], x[1], x[2]);
