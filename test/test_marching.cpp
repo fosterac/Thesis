@@ -51,6 +51,13 @@ namespace {
 
 		//Set up the objects
 		Problem::Interface * P = Problem::Factory("FON", 2, 3);
+
+		//Before we can get this working, we need to find a way
+		//(decorator?) to reliably strip the weights from the 
+		//solution vector.  
+
+		//Problem::Interface * P = Problem::Factory("WFG2", 2, 4);
+
 		DynamicScalarization< typename Problem::FUNCTION > S(P);
 		
 		//Get the starting point

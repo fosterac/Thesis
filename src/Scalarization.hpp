@@ -3,6 +3,7 @@ Scalarizing adapter allowing dynamic weight changes
 */
 #include <boost/bind.hpp>
 #include <cassert>
+#include <stdio.h>
 
 //The public interface is quite similar to the Problem::Interface
 //and could probably be refactored.
@@ -81,14 +82,19 @@ protected:
 		double result = 0.0;
 		double weight_sum = 0.0;
 
+		//Determine where the weights start
 		int offset = at.size() - this->P->Objectives.size() + 1;
 
+		//Separate the set of "Problem" variables
+		const std::vector< double > vars(at.begin(), at.begin() + offset);
+
+		//Evaluate the explicitly weighted components
 		int i;
 		for(i=0;i<(this->P->Objectives.size() - 1);i++){
-			result += at[i + offset] * (this->P->Objectives[i])(at);
+			result += at[i + offset] * (this->P->Objectives[i])(vars);
 			weight_sum += at[i + offset];
 		}
-		result += (1.0 - weight_sum) * (this->P->Objectives[i])(at);
+		result += (1.0 - weight_sum) * (this->P->Objectives[i])(vars);
 		return result;
 	}
 public:

@@ -145,6 +145,8 @@ public:
 
 		int k = 1*(DimObj - 1);
 
+		assert ( k == 1);
+
 		int i;
 		for(i=0; i<dimObj; i++){
 			typename Problem::FUNCTION f( boost::bind(&WFG2::obj, this, _1, i, k, DimObj) );
@@ -158,9 +160,8 @@ public:
 };
 
 Problem::Interface * Problem::Factory( std::string s, int DimObj, int DimDesign){
-	Interface * toReturn;
-
-	toReturn = NULL;
+	
+	Interface * toReturn = NULL;
 	
 	//Instantiate a simple Basin problem
 	if ( s.compare(std::string("BASIN")) == 0 ){
@@ -179,14 +180,13 @@ Problem::Interface * Problem::Factory( std::string s, int DimObj, int DimDesign)
 
 	//Instantiate a FON problem
 	if ( s.compare(std::string("FON")) == 0 ){
-		//This only allows one objective
-		//assert (DimDesign == 3);
+		assert (DimDesign == 3);
 		toReturn = new FON(DimObj, DimDesign);
 	}
 	
 	//Instantiate a WFG2 Problem
 	if ( s.compare(std::string("WFG2")) == 0 ){
-		assert (DimDesign % 2 != 0 );
+		//assert (DimDesign % 2 != 0 );
 		toReturn = new WFG2(DimObj, DimDesign);
 	}
 
