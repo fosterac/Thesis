@@ -4,17 +4,15 @@
 
 #include "Problems.h"
 #include "Scalarization.hpp"
-
 #include <nlopt.hpp>
 #include "NloptAdapt.hpp"
+#include "optimizer.h"
 
 #include <stdio.h>
 
-#include "optimizer.h"
-
 //Nlopt-based optimizer
 OptNlopt::OptNlopt(Problem::FUNCTION &Obj, Scalarization< typename Problem::FUNCTION > *s, double tolerance) : 
-				S(s), NA(Obj, &S->EqualityConstraints, &S->InequalityConstraints, .000001), 
+				S(s), NA(Obj, &S->EqualityConstraints, &S->InequalityConstraints, -.000001), 
 				opt(nlopt::LD_SLSQP, S->dimDesign), 
 				EqTolerances(S->EqualityConstraints.size(), tolerance),
 				InEqTolerances(S->InequalityConstraints.size(), tolerance){
