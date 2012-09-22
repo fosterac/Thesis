@@ -45,19 +45,19 @@ namespace {
 
 		a = &vals[0][0];
 		std::vector< double > p;
-		p.assign(a+1, a+3);
+		p.assign(a, a+2);
 		v.push_back(p);
 		p.assign(a, a+3);
 		L.push_back(p);
 
 		a = &vals[1][0];
-		p.assign(a+1, a+3);
+		p.assign(a, a+2);
 		v.push_back(p);
 		p.assign(a, a+3);
 		L.push_back(p);
 
 		a = &vals[2][0];
-		p.assign(a+1, a+3);
+		p.assign(a, a+2);
 		v.push_back(p);
 		p.assign(a, a+3);
 		L.push_back(p);

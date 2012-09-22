@@ -47,13 +47,15 @@ namespace Mesh {
 
 		int DesignDim;
 		int ObjectiveDim;
+		int MeshDim;
 
 		//Verbose Constructor
 		MeshBase(	std::vector< std::vector< double > > DesignSpace,
 					std::vector< std::vector< double > > ObjectiveSpace,
 					std::vector< std::vector< double > > Lambdas ) : 
 					DesignDim( DesignSpace[0].size() ), 
-					ObjectiveDim( ObjectiveSpace[0].size() )
+					ObjectiveDim( ObjectiveSpace[0].size() ),
+					MeshDim( ObjectiveDim - 1 )
 		{
 			
 			//verify that we have the right number of points
@@ -159,15 +161,18 @@ namespace Mesh {
 					PointsPerSide( NumberOfPoints ) {
 			
 			//Generate points
-			baryTransFunc baryTrans( boost::bind( &barycentric_trans_helper, 1.0/this->PointsPerSide, _1 ) );
+			baryTransFunc baryTrans( boost::bind( &barycentric_trans_helper, 1.0/(this->PointsPerSide-1), _1 ) );
 			int i;
-			for(i=0; i<this->PointsPerSide; i++){
+			for(i=0; i<eta(this->MeshDim, this->PointsPerSide); i++){
 
 				//Get the point n-index
-				std::vector< int > v( Mesh::Simplex::ind_to_coord( i, this->Corners.size(), this->PointsPerSide) ) ;
+				std::vector< int > v( Mesh::Simplex::ind_to_coord( i, this->MeshDim, this->PointsPerSide) ) ;
+				//int k;
+				//for(k=0;k<v.size();k++) printf("%d ", v[k]);
+				//printf("\n");
 
 				//Generate the barycentric coordinates of this point
-				v.push_back( PointsPerSide - std::accumulate(v.begin(), v.end(), 0) );
+				v.push_back( PointsPerSide - 1 - std::accumulate(v.begin(), v.end(), 0) );
 				std::vector< double > barycentric( v.size() );
 				std::transform( v.begin(), v.end(), barycentric.begin(), baryTrans );
 
@@ -179,7 +184,7 @@ namespace Mesh {
 
 				int j;
 				for(j=0; j<barycentric.size(); j++){
-					printf("%lf\n", barycentric[j]);
+					//printf("%lf\n", barycentric[j]);
 					boost::function<double ( double, double )> comb ( 
 						boost::bind( &barycentric_trans_helper_2, 
 						barycentric[j], _1, _2) );
