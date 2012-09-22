@@ -50,6 +50,15 @@ add_test(
     COMMAND testProblems
 )
 
+add_executable(testMesh
+    test_mesh.cpp
+)
+target_link_libraries(testMesh gtest gtest_main )
+add_test(
+    NAME testMesh
+    COMMAND testMesh
+)
+
 add_executable(testOptimizer
     test_optimizer.cpp
 )
