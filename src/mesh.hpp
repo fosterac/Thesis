@@ -20,7 +20,8 @@ namespace Mesh {
 			std::vector< double > DesignCoords;
 			std::vector< double > ObjectiveCoords;
 
-			std::vector< MeshPoint* > Neighbors;
+			//std::vector< MeshPoint* > Neighbors;
+			std::vector< int > Neighbors;
 
 			std::vector< double > LambdaCoords;
 
@@ -33,11 +34,13 @@ namespace Mesh {
 			void Print() {
 				int i;
 				printf("Design: (");
-				for(i=0;i<DesignCoords.size();i++) printf("%lf ", DesignCoords[i]);
+				for(i=0;i<DesignCoords.size();i++)		printf("%lf ", DesignCoords[i]);
 				printf(") Obj: (");
-				for(i=0;i<ObjectiveCoords.size();i++) printf("%lf ", ObjectiveCoords[i]);
+				for(i=0;i<ObjectiveCoords.size();i++)	printf("%lf ", ObjectiveCoords[i]);
 				printf(") Lam: (");
-				for(i=0;i<LambdaCoords.size();i++) printf("%lf ", LambdaCoords[i]);
+				for(i=0;i<LambdaCoords.size();i++)		printf("%lf ", LambdaCoords[i]);
+				printf(") Links: (");
+				for(i=0;i<Neighbors.size();i++)			printf("%d ", Neighbors[i]);
 				printf(")\n");
 			}
 		};
@@ -74,7 +77,7 @@ namespace Mesh {
 				this->Corners.push_back( p );
 			}
 		}
-		void Print() {
+		virtual void Print() {
 			int i;
 			printf("Corners: \n");
 			for(i=0;i<Corners.size();i++) Corners[i].Print();
@@ -86,21 +89,21 @@ namespace Mesh {
 	class Simplex : public MeshBase {
 	private:
 	public:
-		static double eta(int dim, int n) {
+		static int eta(int dim, int n) {
 			return eta_num(dim, n) / eta_den(dim);
 		}
-		static double eta_num(int dim, int n) {
+		static int eta_num(int dim, int n) {
 			if (dim == 1) return n;
 			else return (n+dim -1) * eta_num(dim-1, n);
 		}
-		static double eta_den(int dim) {
+		static int eta_den(int dim) {
 			if (dim == 1) return 1;
 			else return dim * eta_den(dim - 1);
 		}
-		static double coord_to_ind(std::vector< int > &coords, int n){
+		static int coord_to_ind(std::vector< int > &coords, int n){
 			return coord_to_ind_aux(coords, n, 0);
 		}
-		static double coord_to_ind_aux(std::vector< int > &coords, int n, int ind) {
+		static int coord_to_ind_aux(std::vector< int > &coords, int n, int ind) {
 			if ( ind == coords.size()-1 ) return coords[ind];
 			else {
 				int this_coord = coords[ind];
@@ -148,9 +151,35 @@ namespace Mesh {
 		static double barycentric_trans_helper(double n, int x){ return x*n; }
 		static double barycentric_trans_helper_2(double n, double x, double y){ 
 			return y + n*x; 
-			//return y;
 		}
-		//double barycentric_trans_helper(int x){ return double(x)/this->PointsPerSide; }
+		static bool isBoundaryPoint( std::vector< int > &coords, int n) {
+			return ( std::accumulate( coords.begin(), coords.end(), 0 ) == (n - 1) );
+		}
+		static std::vector< int > getNeighbors( std::vector< int > coords, int n ){
+			std::vector< int > neighbors;
+			int i;
+			if( ! isBoundaryPoint( coords, n ) ) {
+				for(i=0;i<coords.size();i++) {
+					if( coords[i] == 0 ) continue;
+
+					coords[i] += 1;
+					int left = coord_to_ind(coords, n);
+					coords[i] -= 2;
+					int right = coord_to_ind(coords, n);
+					coords[i] += 1;
+
+					neighbors.push_back(left);
+					neighbors.push_back(right);
+				}
+			}
+			else {
+				//Not sure what to do here...
+				for(i=0;i<coords.size();i++) {
+					if( coords[i] == 0 ) continue;
+				}
+			}
+			return neighbors;
+		}
 	//public:
 		int PointsPerSide;
 
@@ -167,9 +196,9 @@ namespace Mesh {
 
 				//Get the point n-index
 				std::vector< int > v( Mesh::Simplex::ind_to_coord( i, this->MeshDim, this->PointsPerSide) ) ;
-				//int k;
-				//for(k=0;k<v.size();k++) printf("%d ", v[k]);
-				//printf("\n");
+
+				//Get the neighbor indicies
+				std::vector< int > neighbors ( Mesh::Simplex::getNeighbors( v, this->PointsPerSide ) );
 
 				//Generate the barycentric coordinates of this point
 				v.push_back( PointsPerSide - 1 - std::accumulate(v.begin(), v.end(), 0) );
@@ -181,7 +210,6 @@ namespace Mesh {
 				std::vector< double > design( this->DesignDim, 0.0 );
 				std::vector< double > objective( this->ObjectiveDim, 0.0 );
 				std::vector< double > lambda( this->ObjectiveDim, 0.0 );
-
 				int j;
 				for(j=0; j<barycentric.size(); j++){
 					//printf("%lf\n", barycentric[j]);
@@ -192,11 +220,12 @@ namespace Mesh {
 					std::transform( Corners[j].ObjectiveCoords.begin(), Corners[j].ObjectiveCoords.end(), objective.begin(), objective.begin(), comb);
 					std::transform( Corners[j].LambdaCoords.begin(), Corners[j].LambdaCoords.end(), lambda.begin(), lambda.begin(), comb);
 				}
+
 				MeshPoint m( design, objective, lambda );
-				m.Print();
+				m.Neighbors = neighbors;
+
 				this->InternalPoints.push_back( m );
 			}
 		}
 	};
-
 }

@@ -19,7 +19,6 @@ namespace {
 	class SimplexTest : public ::testing::Test {
 	protected:
 		//vector< vector<double> > Design;
-
 		virtual void SetUp(){
 		}		
 	};
@@ -36,7 +35,27 @@ namespace {
 			EXPECT_EQ( i,  Mesh::Simplex::coord_to_ind( v , n ) );
 		}
 	}
-	//Build a mesh
+	//Build a 1D mesh (line)
+	TEST(SimplexTest, 1D){
+
+		std::vector< std::vector < double > > v, L;
+		double vals[3][3] = { {1, 0}, {0, 1} };
+		double *a;
+
+		a = &vals[0][0];
+		std::vector< double > p;
+		p.assign(a, a+2);
+		v.push_back(p);
+
+		a = &vals[1][0];
+		p.assign(a, a+2);
+		v.push_back(p);
+
+		Mesh::Simplex mesh( v, v, v, 5);
+		mesh.Print();
+	}
+
+	//Build a 2D mesh (trianglar plane)
 	TEST(SimplexTest, 2D){
 
 		std::vector< std::vector < double > > v, L;
@@ -63,7 +82,6 @@ namespace {
 		L.push_back(p);
 
 		Mesh::Simplex mesh( v, L, L, 3);
-
-		//mesh.Print();
+		mesh.Print();
 	}
 }
