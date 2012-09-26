@@ -100,6 +100,8 @@ protected:
 public:
 	DynamicScalarization(Problem::Interface * p) : Scalarization<T>(p) {
 		this->dimDesign = this->P->dimDesign + this->P->Objectives.size() - 1;
+
+		//Add constraints on the individual lambda values
 		int i;
 		for(i=0; i<this->P->Objectives.size() - 1; i++) {
 			this->lowerBounds.push_back(0.0);

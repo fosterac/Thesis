@@ -8,6 +8,7 @@
 
 #include "Problems.h"
 #include "Scalarization.hpp"
+#include "Constraint.hpp"
 #include <nlopt.hpp>
 #include "NloptAdapt.hpp"
 #include "optimizer.h"
@@ -18,7 +19,7 @@ namespace {
 
 	void Print(const std::vector< double > &x){
 		int i;
-		for(i=0; i<x.size(); i++) {printf("%lf ", x[i]); }
+		for(i=0; i<x.size(); i++) {printf("%lf ", x[i]);}
 	}
 	std::vector< double > GetF(const std::vector< Problem::FUNCTION > &f, const std::vector< double > &x){
 		std::vector< double > result;
@@ -55,30 +56,37 @@ namespace {
 		//Before we can get this working, we need to find a way
 		//(decorator?) to reliably strip the weights from the 
 		//solution vector.  
-
 		//Problem::Interface * P = Problem::Factory("WFG2", 2, 4);
 
-		DynamicScalarization< typename Problem::FUNCTION > S(P);
+		FixedScalarization< typename Problem::FUNCTION > S(P);
 		
 		//Get the starting point
 		Optimizer * op = new OptNlopt(P->Objectives[0], &S, 1e-4);
-		std::vector<double> x(S.dimDesign, 0.3);
-		op->RunFrom(x);
+		std::vector<double> x1(P->dimDesign, 0.3);
+		op->RunFrom(x1);
+		PrintF(x1, P->Objectives);
 
-		PrintF(x, P->Objectives);
+		DynamicScalarization< typename Problem::FUNCTION > D(P);
+		//StepConstraint< typename Problem::FUNCTION > C(NULL, step);
+		FStepConstraint< typename Problem::FUNCTION > C(P->Objectives, NULL, step);
+		D.EqualityConstraints.push_back( C.function );
+
+		op = new OptNlopt(D.f, &D, 1e-4);
+		x1.push_back(1.0);
+		std::vector<double> x(x1);
 
 		//Get the rest of the points
 		int i;
 		for(i=0; i<Points; i++){
-			std::vector< double > last_x(x);
+			std::vector< double > last_x(x.begin(), x.begin() + P->dimDesign);
+			std::vector< double > last_f( GetF(P->Objectives, last_x) );
+
 			//Build the additional constraint
-			Problem::FUNCTION c = boost::bind( &FDist, P->Objectives, step, last_x, _1);
-			S.EqualityConstraints.push_back( c );
-			op = new OptNlopt(S.f, &S, 1e-4);
+			C.UpdateFrom( &last_f );
+			//C.UpdateFrom( &last_x );
+
 			op->RunFrom(x);
-			delete op;
 			PrintF(x, P->Objectives);
-			S.EqualityConstraints.pop_back(); 
 
 			//printf("DistErr: %lf\n", FDist(P->Objectives, 0, last_x, x));
 		}
