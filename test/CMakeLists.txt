@@ -23,6 +23,7 @@ add_test(
     COMMAND testNlopt
 )
 
+file( COPY data/ DESTINATION data/)
 add_executable(testHypervolume
     test_hypervolume.cpp
 )
