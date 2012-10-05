@@ -155,8 +155,37 @@ namespace Mesh {
 		static bool isBoundaryPoint( std::vector< int > &coords, int n) {
 			return ( std::accumulate( coords.begin(), coords.end(), 0 ) == (n - 1) );
 		}
+		static std::vector< std::vector< int > > getNeighborsAux( std::vector< int > coords, int n){
+			std::vector< std::vector< int > > result;
+
+			if( ! isBoundaryPoint( coords, n ) ) {
+				int i;
+				for(i=0;i<coords.size();i++) {
+					if( coords[i] == 0 ) continue;
+
+					coords[i] += 1;
+					result.push_back( coords );					
+					coords[i] -= 2;
+					result.push_back( coords );
+					coords[i] += 1;
+				}
+			}
+			else{
+				coords.pop_back();
+
+				if( !coords.empty() ) {
+					result = getNeighborsAux( coords, n );
+					int i;
+					for(i=0;i<result.size();i++){
+						int sum = std::accumulate( result[i].begin(), result[i].end(), 0);
+						result[i].push_back( n - 1 - sum );
+					}
+				}
+			}
+			return result;
+		}
 		static std::vector< int > getNeighbors( std::vector< int > coords, int n ){
-			std::vector< int > neighbors;
+			/*std::vector< int > neighbors;
 			int i;
 			if( ! isBoundaryPoint( coords, n ) ) {
 				for(i=0;i<coords.size();i++) {
@@ -178,6 +207,12 @@ namespace Mesh {
 					if( coords[i] == 0 ) continue;
 				}
 			}
+			*/
+			std::vector< int > neighbors;
+			std::vector< std::vector< int > > NCoords(getNeighborsAux(coords, n) );
+			int i;
+			for(i=0;i<NCoords.size();i++){ neighbors.push_back( coord_to_ind(NCoords[i], n) ); }
+			
 			return neighbors;
 		}
 	//public:
@@ -212,7 +247,7 @@ namespace Mesh {
 				std::vector< double > lambda( this->ObjectiveDim, 0.0 );
 				int j;
 				for(j=0; j<barycentric.size(); j++){
-					//printf("%lf\n", barycentric[j]);
+					//printf("%lf\t", barycentric[j]);
 					boost::function<double ( double, double )> comb ( 
 						boost::bind( &barycentric_trans_helper_2, 
 						barycentric[j], _1, _2) );
@@ -220,7 +255,7 @@ namespace Mesh {
 					std::transform( Corners[j].ObjectiveCoords.begin(), Corners[j].ObjectiveCoords.end(), objective.begin(), objective.begin(), comb);
 					std::transform( Corners[j].LambdaCoords.begin(), Corners[j].LambdaCoords.end(), lambda.begin(), lambda.begin(), comb);
 				}
-
+				//printf("\n");
 				MeshPoint m( design, objective, lambda );
 				m.Neighbors = neighbors;
 
