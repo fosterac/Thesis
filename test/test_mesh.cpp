@@ -19,7 +19,6 @@ namespace {
 	class SimplexTest : public ::testing::Test {
 	protected:
 		//vector< vector<double> > Design;
-
 		virtual void SetUp(){
 		}		
 	};
@@ -36,34 +35,81 @@ namespace {
 			EXPECT_EQ( i,  Mesh::Simplex::coord_to_ind( v , n ) );
 		}
 	}
-	//Build a mesh
-	TEST(SimplexTest, 2D){
+	//Build a 1D mesh (line)
+	TEST(SimplexTest, 1D){
 
 		std::vector< std::vector < double > > v, L;
-		double vals[3][3] = { {1, 0, 0}, {0, 1, 0}, {0, 0, 1} };
+		double vals[3][3] = { {1, 0}, {0, 1} };
 		double *a;
 
 		a = &vals[0][0];
 		std::vector< double > p;
 		p.assign(a, a+2);
 		v.push_back(p);
-		p.assign(a, a+3);
-		L.push_back(p);
 
 		a = &vals[1][0];
 		p.assign(a, a+2);
 		v.push_back(p);
-		p.assign(a, a+3);
-		L.push_back(p);
 
-		a = &vals[2][0];
-		p.assign(a, a+2);
-		v.push_back(p);
-		p.assign(a, a+3);
-		L.push_back(p);
+		Mesh::Simplex mesh( v, v, v, 5);
+		mesh.Print();
+	}
 
-		Mesh::Simplex mesh( v, L, L, 3);
+	//Build a 2D mesh (trianglar plane)
+	TEST(SimplexTest, 2D){
 
-		//mesh.Print();
+		std::vector< std::vector < double > > D, O, L;
+		double Ovals[3][3] = { {1, 0, 0}, {0, 1, 0}, {0, 0, 0} };
+		double Lvals[3][3] = { {1, 0, 0}, {0, 1, 0}, {0, 0, 1} };
+		double *a;
+		double *b;
+		int dim = 3;
+		
+		std::vector< double > p;
+		int i;
+		for(i=0;i<dim;i++){
+			a = &Ovals[i][0];
+			p.assign(a, a+dim);
+			D.push_back(p);
+
+			p.assign(a, a+dim);
+			O.push_back(p);
+
+			a = &Lvals[i][0];
+			p.assign(a, a+dim);
+			L.push_back(p);
+		}
+
+		Mesh::Simplex mesh( D, O, L, 3);
+		mesh.Print();
+	}
+
+	//Build a 3D mesh (quarter pyramid)
+	TEST(SimplexTest, 3D){
+
+		std::vector< std::vector < double > > D, O, L;
+		double Ovals[4][4] = { {0, 0, 0, 0}, {1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0} };
+		double Lvals[4][4] = { {1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1} };
+		double *a;
+		double *b;
+		int dim = 4;
+		
+		std::vector< double > p;
+		int i;
+		for(i=0;i<dim;i++){
+			a = &Ovals[i][0];
+			p.assign(a, a+dim);
+			D.push_back(p);
+
+			p.assign(a, a+dim);
+			O.push_back(p);
+
+			a = &Lvals[i][0];
+			p.assign(a, a+dim);
+			L.push_back(p);
+		}
+
+		Mesh::Simplex mesh( D, O, L, 3);
+		mesh.Print();
 	}
 }
