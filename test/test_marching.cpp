@@ -38,6 +38,14 @@ namespace {
 		}
 		return fabs( sqrt(dist) - step );
 	}
+	double Dist(double step, const std::vector< double > &y, const std::vector< double > &x){
+		int i;
+		double dist = 0.0;
+		for(i=0; i<y.size(); i++) {
+			dist += (y[i] - x[i]) * (y[i] - x[i]);
+		}
+		return fabs( sqrt(dist) - step );
+	}
 	void PrintF(std::vector< double > &x, std::vector< Problem::FUNCTION > &f){ 
 		Print(x);
 		printf(" -> ");
@@ -72,7 +80,7 @@ namespace {
 		D.EqualityConstraints.push_back( C.function );
 
 		op = new OptNlopt(D.f, &D, 1e-4);
-		x1.push_back(1.0);
+		x1.push_back(0.5);
 		std::vector<double> x(x1);
 
 		//Get the rest of the points
@@ -89,6 +97,7 @@ namespace {
 			PrintF(x, P->Objectives);
 
 			//printf("DistErr: %lf\n", FDist(P->Objectives, 0, last_x, x));
+			//printf("DistErr: %lf\n", Dist(0.0, last_x, x));
 		}
 	}
 }

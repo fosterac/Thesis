@@ -1,6 +1,7 @@
 /*
 General constraint interface
 */
+
 #include <boost/bind.hpp>
 #include <cassert>
 
@@ -76,28 +77,20 @@ public:
 };
 
 template< typename T >
-class EqDistanceConstraint : public GeneralConstraint< T >  {
+class FEqDistanceConstraint : public FStepConstraint< T >  {
 protected:
-	std::vector< double > const * x1;
 	std::vector< double > const * x2;
 
-	double L2Dist(const std::vector< double > &x1, const std::vector< double > &x2 ) {
-		int i;
-		double sum = 0.0;
-		for(i=0;i<x1.size();i++){
-			sum += pow( x1[i] - x2[i], 2.0 );
-		}
-		return sum;
-	}
 	double eval(const std::vector< double > &x){
-		return L2Dist(*x1, x) - L2Dist(*x2, x);
+		this->Feval(x);
+		return L2Dist(*this->x1, this->f) - L2Dist(*this->x2, this->f) ;
 	}
 public:
-	EqDistanceConstraint( std::vector< double > * const x1, std::vector< double > * const x2 ) :
-	  GeneralConstraint< T > (), x1(x1), x2(x2) { }
-	void Update( std::vector< double > * const x1, std::vector< double > * const x2) { 
-		this->x1 = x1; 
-		this->x2 = x2; 
+	FEqDistanceConstraint( const std::vector< T > &F_trans, const std::vector< double >  * f1, const std::vector< double >  * f2, double step) :
+	  x2(f2), FStepConstraint< T >(F_trans, f1, step) {}
+	void UpdateFrom( std::vector< double > * const f1, std::vector< double > * const f2) { 
+		this->x1 = f1; 
+		this->x2 = f2; 
 	}
 };
 
