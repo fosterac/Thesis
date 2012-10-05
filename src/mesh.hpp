@@ -46,7 +46,7 @@ namespace Mesh {
 		};
 
 		std::vector< MeshPoint > Corners;
-		std::vector< MeshPoint > InternalPoints;
+		std::vector< MeshPoint > Points;
 
 		int DesignDim;
 		int ObjectiveDim;
@@ -82,7 +82,7 @@ namespace Mesh {
 			printf("Corners: \n");
 			for(i=0;i<Corners.size();i++) Corners[i].Print();
 			printf("Points: \n");
-			for(i=0;i<InternalPoints.size();i++) InternalPoints[i].Print();
+			for(i=0;i<Points.size();i++) Points[i].Print();
 		}
 	};
 
@@ -185,29 +185,6 @@ namespace Mesh {
 			return result;
 		}
 		static std::vector< int > getNeighbors( std::vector< int > coords, int n ){
-			/*std::vector< int > neighbors;
-			int i;
-			if( ! isBoundaryPoint( coords, n ) ) {
-				for(i=0;i<coords.size();i++) {
-					if( coords[i] == 0 ) continue;
-
-					coords[i] += 1;
-					int left = coord_to_ind(coords, n);
-					coords[i] -= 2;
-					int right = coord_to_ind(coords, n);
-					coords[i] += 1;
-
-					neighbors.push_back(left);
-					neighbors.push_back(right);
-				}
-			}
-			else {
-				//Not sure what to do here...
-				for(i=0;i<coords.size();i++) {
-					if( coords[i] == 0 ) continue;
-				}
-			}
-			*/
 			std::vector< int > neighbors;
 			std::vector< std::vector< int > > NCoords(getNeighborsAux(coords, n) );
 			int i;
@@ -215,6 +192,7 @@ namespace Mesh {
 			
 			return neighbors;
 		}
+
 	//public:
 		int PointsPerSide;
 
@@ -256,10 +234,11 @@ namespace Mesh {
 					std::transform( Corners[j].LambdaCoords.begin(), Corners[j].LambdaCoords.end(), lambda.begin(), lambda.begin(), comb);
 				}
 				//printf("\n");
+
 				MeshPoint m( design, objective, lambda );
 				m.Neighbors = neighbors;
 
-				this->InternalPoints.push_back( m );
+				this->Points.push_back( m );
 			}
 		}
 	};
