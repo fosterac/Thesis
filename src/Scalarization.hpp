@@ -70,6 +70,8 @@ public:
 
 };
 
+
+
 template< typename T >
 class DynamicScalarization : public Scalarization < T > {
 protected:
@@ -83,7 +85,7 @@ protected:
 		double weight_sum = 0.0;
 
 		//Determine where the weights start
-		int offset = at.size() - this->P->Objectives.size() + 1;
+		int offset = this->P->dimDesign;
 
 		//Separate the set of "Problem" variables
 		const std::vector< double > vars(at.begin(), at.begin() + offset);

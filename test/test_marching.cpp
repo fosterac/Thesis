@@ -57,19 +57,19 @@ namespace {
 
 		int Points = 146;
 		double step = 0.01;
+		
 
 		//Set up the objects
 		Problem::Interface * P = Problem::Factory("FON", 2, 3);
 
-		//Before we can get this working, we need to find a way
-		//(decorator?) to reliably strip the weights from the 
-		//solution vector.  
-		//Problem::Interface * P = Problem::Factory("WFG2", 2, 4);
+		//Points = 10;
+		//step = 0.1;
+		//Problem::Interface * P = Problem::Factory("WFG2", 2, 5);
 
 		FixedScalarization< typename Problem::FUNCTION > S(P);
 		
 		//Get the starting point
-		Optimizer * op = new OptNlopt(P->Objectives[0], &S, 1e-4);
+		Optimizer * op = new OptNlopt(P->Objectives[1], &S, 1e-4);
 		std::vector<double> x1(P->dimDesign, 0.3);
 		op->RunFrom(x1);
 		PrintF(x1, P->Objectives);
@@ -94,6 +94,7 @@ namespace {
 			//C.UpdateFrom( &last_x );
 
 			op->RunFrom(x);
+			
 			PrintF(x, P->Objectives);
 
 			//printf("DistErr: %lf\n", FDist(P->Objectives, 0, last_x, x));

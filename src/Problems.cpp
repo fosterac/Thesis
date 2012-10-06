@@ -132,11 +132,12 @@ private:
 		//We're seeing an assertion in the WFGProblems code fail 
 		//as the input vectors are "out of bounds" (<0), which is
 		//a result of the finite differences scheme.
+		
+		//return (Problems::WFG2(x, k, M))[i];
 
-		//int j;
-		//for(j=0;j<x.size();j++){ printf("%lf ", x[j]);}
-		//printf("\n");
-		return Problems::WFG2(x, k, M).at(i);
+		//This should be done with a decorator anyway
+		std::vector< double > var_x(x.begin(), x.begin() + this->dimDesign);
+		return (Problems::WFG2(var_x, k, M))[i];
 	}
 public:
 	WFG2(int DimObj, int DimDesign)	{
