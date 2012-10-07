@@ -33,13 +33,13 @@ namespace Mesh {
 						LambdaCoords( Lambdas ) { }
 			void Print() {
 				int i;
-				printf("Design: (");
+				printf("Design: ( ");
 				for(i=0;i<DesignCoords.size();i++)		printf("%lf ", DesignCoords[i]);
-				printf(") Obj: (");
+				printf(") Obj: ( ");
 				for(i=0;i<ObjectiveCoords.size();i++)	printf("%lf ", ObjectiveCoords[i]);
-				printf(") Lam: (");
+				printf(") Lam: ( ");
 				for(i=0;i<LambdaCoords.size();i++)		printf("%lf ", LambdaCoords[i]);
-				printf(") Links: (");
+				printf(") Links: ( ");
 				for(i=0;i<Neighbors.size();i++)			printf("%d ", Neighbors[i]);
 				printf(")\n");
 			}

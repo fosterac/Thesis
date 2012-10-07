@@ -77,3 +77,12 @@ add_test(
     NAME testMarching
     COMMAND testMarching
 )
+
+add_executable(testHomotopy
+    test_homotopy.cpp
+)
+target_link_libraries(testHomotopy gtest gtest_main nlopt Problems Optimizer )
+add_test(
+    NAME testHomotopy
+    COMMAND testHomotopy
+)

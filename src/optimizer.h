@@ -13,7 +13,6 @@ private:
 	std::vector< double > InEqTolerances;
 
 public:
-	//OptNlopt(Scalarization< typename Problem::FUNCTION > *s, double tolerance);
 	OptNlopt(Problem::FUNCTION &Obj, Scalarization< typename Problem::FUNCTION > *s, double tolerance);
-	double RunFrom(std::vector< double > &);
+	double RunFrom( std::vector< double > & );
 };

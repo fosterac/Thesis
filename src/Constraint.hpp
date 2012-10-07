@@ -86,8 +86,8 @@ protected:
 		return L2Dist(*this->x1, this->f) - L2Dist(*this->x2, this->f) ;
 	}
 public:
-	FEqDistanceConstraint( const std::vector< T > &F_trans, const std::vector< double >  * f1, const std::vector< double >  * f2, double step) :
-	  x2(f2), FStepConstraint< T >(F_trans, f1, step) {}
+	FEqDistanceConstraint( const std::vector< T > &F_trans, const std::vector< double >  * f1, const std::vector< double >  * f2) :
+	  x2(f2), FStepConstraint< T >(F_trans, f1, 0.0) {}
 	void UpdateFrom( std::vector< double > * const f1, std::vector< double > * const f2) { 
 		this->x1 = f1; 
 		this->x2 = f2; 

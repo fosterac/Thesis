@@ -62,7 +62,7 @@ namespace {
 		//Set up the objects
 		Problem::Interface * P = Problem::Factory("FON", 2, 3);
 
-		//Points = 10;
+		//Points = 20;
 		//step = 0.1;
 		//Problem::Interface * P = Problem::Factory("WFG2", 2, 5);
 
@@ -70,7 +70,7 @@ namespace {
 		
 		//Get the starting point
 		Optimizer * op = new OptNlopt(P->Objectives[1], &S, 1e-4);
-		std::vector<double> x1(P->dimDesign, 0.3);
+		std::vector<double> x1(P->dimDesign, 0.5);
 		op->RunFrom(x1);
 		PrintF(x1, P->Objectives);
 
