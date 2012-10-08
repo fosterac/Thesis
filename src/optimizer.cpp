@@ -12,16 +12,19 @@
 
 //Nlopt-based optimizer
 OptNlopt::OptNlopt(Problem::FUNCTION &Obj, Scalarization< typename Problem::FUNCTION > *s, double tolerance) : 
-				S(s), NA(Obj, &S->EqualityConstraints, &S->InequalityConstraints, .00000001), 
+				S(s), NA(Obj, &S->EqualityConstraints, &S->InequalityConstraints, 1e-6), 
 				opt(nlopt::LD_SLSQP, S->dimDesign), 
 				EqTolerances(S->EqualityConstraints.size(), tolerance),
 				InEqTolerances(S->InequalityConstraints.size(), tolerance){
 
 	//Set the state of the optimizer:
-
+	
+	//Boundary values
 	if (!S->lowerBounds.empty()) opt.set_lower_bounds(S->lowerBounds);
 	if (!S->upperBounds.empty()) opt.set_upper_bounds(S->upperBounds);
+	
 	opt.set_xtol_rel(tolerance);
+	opt.set_ftol_abs(tolerance);
 
 	//Pass a scalarized function through the 
 	//Nlopt Adapter to the Nlopt object
@@ -36,8 +39,24 @@ OptNlopt::OptNlopt(Problem::FUNCTION &Obj, Scalarization< typename Problem::FUNC
 	}
 }
 
-double OptNlopt::RunFrom(std::vector< double > &x) {
+/*double OptNlopt::RunFrom(std::vector< double > &x) {
 	double minf;
 	nlopt::result result = opt.optimize(x, minf);
+	printf("NLOPT status: %d\n", result);
 	return minf;
+}*/
+
+int OptNlopt::RunFrom(std::vector< double > &x) {
+	int result = 0;
+	double minf;
+	try {
+		//nlopt::result result = opt.optimize(x, minf);
+		result = opt.optimize(x, minf);
+	}
+	//catch (const std::exception& ex) {
+	catch (const std::runtime_error& ex) {
+		result = 0;
+	}
+
+	return result;
 }

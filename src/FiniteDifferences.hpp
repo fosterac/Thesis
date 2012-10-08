@@ -2,32 +2,40 @@ namespace FiniteDifferences {
 	struct CENTRAL {};
 	template< typename T >
 	static double Central(const int dim, std::vector<double> &at, T& func, const double fd_step){
+		double tmp = at[dim];
+
 		at[dim] -= fd_step; 
 		double left = (func)(at);
-		at[dim] += 2*fd_step; 
+
+		at[dim] = tmp + fd_step; 
 		double right = (func)(at);
-		at[dim] -= fd_step; 
+
+		at[dim] = tmp;
 
 		return (right - left) / (2*fd_step);
 	}
 	struct FORWARD {};
 	template< typename T >
 	static double Forward(const int dim, std::vector<double> &at, T& func, const double fd_step){
+		double tmp = at[dim];
+
 		double center = (func)(at);
 
 		at[dim] += fd_step; 
 		double forward = (func)(at);
 
-		at[dim] -= fd_step; 
+		at[dim] = tmp;
 
 		return (forward - center) / (fd_step);
 	}
 	template< typename T >
 	static double ForwardOpt(const int dim, std::vector<double> &at, double center, T& func, const double fd_step){
+		double tmp = at[dim];
+
 		at[dim] += fd_step; 
 		double forward = (func)(at);
 
-		at[dim] -= fd_step; 
+		at[dim] = tmp;
 
 		return (forward - center) / (fd_step);
 	}

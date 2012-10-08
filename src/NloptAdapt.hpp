@@ -24,7 +24,8 @@ private:
 		
 		for(i=0; i<m; i++){
 			result[i] = eval(Constr[i], at);
-			if(grad) FiniteDifferences::GradEval<double *, T>(grad+i*n, Constr[i], at, nl->fd_step, FiniteDifferences::FORWARD());
+			//if(grad) FiniteDifferences::GradEval<double *, T>(grad+i*n, Constr[i], at, nl->fd_step, FiniteDifferences::FORWARD());
+			if(grad) FiniteDifferences::GradEval<double *, T>(grad+i*n, Constr[i], at, nl->fd_step, FiniteDifferences::CENTRAL());
 		}
 	}
 
@@ -37,7 +38,8 @@ public:
 		assert ( my_func_data != NULL );
 		NloptAdapt *nl = reinterpret_cast<NloptAdapt *>(my_func_data);
 		if(!grad.empty()){
-			FiniteDifferences::GradEval<std::vector<double> &, T>(grad, nl->obj,  x,  nl->fd_step, FiniteDifferences::FORWARD() );
+			//FiniteDifferences::GradEval<std::vector<double> &, T>(grad, nl->obj,  x,  nl->fd_step, FiniteDifferences::FORWARD() );
+			FiniteDifferences::GradEval<std::vector<double> &, T>(grad, nl->obj,  x,  nl->fd_step, FiniteDifferences::CENTRAL() );
 		}
 		return eval(nl->obj, x);
 	}

@@ -106,8 +106,8 @@ public:
 
 		int i;
 		for(i=0; i<dimDesign; i++){
-			this->lowerBounds.push_back( -5.0 );
-			this->upperBounds.push_back( 5.0 );
+			this->lowerBounds.push_back( -1.0 );
+			this->upperBounds.push_back( 1.0 );
 		}
 	}
 };
@@ -126,7 +126,7 @@ using namespace WFG::Toolkit;
 using namespace WFG::Toolkit::Examples;
 
 //WFG2
-class WFG2 : public Problem::Interface{
+class WFG5 : public Problem::Interface{
 private:
 	double obj(const std::vector< double > &x, const int i, const int k, const int M){
 		//We're seeing an assertion in the WFGProblems code fail 
@@ -137,10 +137,10 @@ private:
 
 		//This should be done with a decorator anyway
 		std::vector< double > var_x(x.begin(), x.begin() + this->dimDesign);
-		return (Problems::WFG2(var_x, k, M))[i];
+		return (Problems::WFG5(var_x, k, M))[i];
 	}
 public:
-	WFG2(int DimObj, int DimDesign)	{
+	WFG5(int DimObj, int DimDesign)	{
 		this->dimObj = DimObj;
 		this->dimDesign = DimDesign;
 
@@ -150,11 +150,15 @@ public:
 
 		int i;
 		for(i=0; i<dimObj; i++){
-			typename Problem::FUNCTION f( boost::bind(&WFG2::obj, this, _1, i, k, DimObj) );
+			typename Problem::FUNCTION f( boost::bind(&WFG5::obj, this, _1, i, k, DimObj) );
 			this->Objectives.push_back(	f );
 		}
 		for(i=0; i<dimDesign; i++){
-			this->lowerBounds.push_back( 0.0 );
+			//The zero bound is enforced in the WFG code
+			//so we perturb it to allow the central difference
+			//scheme to work.
+			//this->lowerBounds.push_back( 0.0 );
+			this->lowerBounds.push_back( 1e-4 );
 			this->upperBounds.push_back( 1.0 );
 		}
 	}
@@ -186,9 +190,9 @@ Problem::Interface * Problem::Factory( std::string s, int DimObj, int DimDesign)
 	}
 	
 	//Instantiate a WFG2 Problem
-	if ( s.compare(std::string("WFG2")) == 0 ){
+	if ( s.compare(std::string("WFG5")) == 0 ){
 		//assert (DimDesign % 2 != 0 );
-		toReturn = new WFG2(DimObj, DimDesign);
+		toReturn = new WFG5(DimObj, DimDesign);
 	}
 
 	return toReturn;
