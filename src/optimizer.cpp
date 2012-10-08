@@ -23,6 +23,8 @@ OptNlopt::OptNlopt(Problem::FUNCTION &Obj, Scalarization< typename Problem::FUNC
 	if (!S->lowerBounds.empty()) opt.set_lower_bounds(S->lowerBounds);
 	if (!S->upperBounds.empty()) opt.set_upper_bounds(S->upperBounds);
 	
+	//Set the stop conditions
+	//this requires some attention
 	opt.set_xtol_rel(tolerance);
 	opt.set_ftol_abs(tolerance);
 
