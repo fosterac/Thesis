@@ -1,6 +1,7 @@
 class Optimizer {
 public:
-	virtual double RunFrom(std::vector< double > &) = 0;
+	//virtual double RunFrom(std::vector< double > &) = 0;
+	virtual int RunFrom(std::vector< double > &) = 0;
 };
 
 class OptNlopt : public Optimizer {
@@ -14,5 +15,6 @@ private:
 
 public:
 	OptNlopt(Problem::FUNCTION &Obj, Scalarization< typename Problem::FUNCTION > *s, double tolerance);
-	double RunFrom( std::vector< double > & );
+	//double RunFrom( std::vector< double > & );
+	int RunFrom( std::vector< double > & );
 };
