@@ -26,7 +26,7 @@ protected:
 	int to;
 
 	double eval(const std::vector< double > &x) {
-		return sign * ( value - std::accumulate(x.begin() + from, x.begin() + to, 0.0) );
+		return this->sign * ( this->value - std::accumulate(x.begin() + this->from, x.begin() + this->to, 0.0) );
 	}
 
 public:
