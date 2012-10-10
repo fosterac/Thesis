@@ -2,6 +2,7 @@ include_directories(${CMAKE_SOURCE_DIR}/src)
 include_directories(${CMAKE_SOURCE_DIR}/dependencies)
 include_directories(${CMAKE_SOURCE_DIR}/dependencies/gtest-1.6.0/include)
 include_directories(${CMAKE_SOURCE_DIR}/dependencies/nlopt-2.3/api)
+include_directories(${CMAKE_SOURCE_DIR}/dependencies/alglib-3.6.0/cpp/src)
 
 enable_testing()
 
@@ -21,6 +22,15 @@ target_link_libraries(testNlopt gtest gtest_main nlopt )
 add_test(
     NAME testNlopt
     COMMAND testNlopt
+)
+
+add_executable(testAlgLib
+    test_alglib.cpp
+)
+target_link_libraries(testAlgLib gtest gtest_main alglib )
+add_test(
+    NAME testAlgLib
+    COMMAND testAlgLib
 )
 
 file( COPY data/ DESTINATION data/)
