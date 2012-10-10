@@ -50,8 +50,8 @@ OptNlopt::OptNlopt(Problem::FUNCTION &Obj, Scalarization< typename Problem::FUNC
 
 void OptNlopt::RefreshConstraints(){
 	//printf("Called right func\n");
-	//opt.remove_equality_constraints();
-	//opt.remove_inequality_constraints();
+	opt.remove_equality_constraints();
+	opt.remove_inequality_constraints();
 	//printf("Called right func\n");
 	std::vector< double > E( this->S->EqualityConstraints.size(), this->tolerance) ;
 	this->EqTolerances.assign(E.begin(), E.end());

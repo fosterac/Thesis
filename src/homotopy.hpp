@@ -3,8 +3,8 @@ namespace Pareto {
 	private:
 		Problem::Interface *Prob;
 		DynamicScalarization< typename Problem::FUNCTION > Scal;
-		//Optimizer * Opt;
-		OptNlopt * Opt;
+		Optimizer * Opt;
+		//OptNlopt * Opt;
 
 		double tolerance;
 
@@ -81,9 +81,9 @@ namespace Pareto {
 
 			//Incorporate constraint
 			FEqDistanceConstraint< typename Problem::FUNCTION > C(Prob->Objectives, NULL, NULL);
-			Scal.EqualityConstraints.push_back( C.function );
-			//std::vector< FEqDistanceConstraint< typename Problem::FUNCTION > > 
-				//NeighborConstraints( mesh.MeshDim, FEqDistanceConstraint< typename Problem::FUNCTION > (Prob->Objectives, NULL, NULL) );
+			//Scal.EqualityConstraints.push_back( C.function );
+			std::vector< FEqDistanceConstraint< typename Problem::FUNCTION > > 
+				NeighborConstraints( mesh.MeshDim, FEqDistanceConstraint< typename Problem::FUNCTION > (Prob->Objectives, NULL, NULL) );
 
 			//Construct optimizer
 			this->Opt = new OptNlopt(Scal.f, &Scal, tolerance);
@@ -102,14 +102,14 @@ namespace Pareto {
 						//optimizer and then establish their neighbors.
 						
 						//Get the neighbor locations
-						std::vector< double > *left		= &mesh.Points[ mesh.Points[i].Neighbors[0] ].ObjectiveCoords;
+						std::vector< double > *left		= &mesh.	Points[ mesh.Points[i].Neighbors[0] ].ObjectiveCoords;
 						std::vector< double > *right	= &mesh.Points[ mesh.Points[i].Neighbors[1] ].ObjectiveCoords;
 
 						//Update equidistant constraint
 						C.UpdateFrom( left, right );
-						//NeighborConstraints[0].UpdateFrom( left, right);
 						//Scal.EqualityConstraints.push_back( C.function );
-
+						NeighborConstraints[0].UpdateFrom( left, right);
+						Scal.EqualityConstraints.push_back( NeighborConstraints[0].function );
 						
 						//Add the EQ dist constraints
 						//NOTE: HIGHLY INEFFICIENT
@@ -121,7 +121,7 @@ namespace Pareto {
 							NeighborConstraints[iter].UpdateFrom( left, right );
 							Scal.EqualityConstraints.push_back( NeighborConstraints[iter].function );
 						}*/
-						//this->Opt->RefreshConstraints();
+						this->Opt->RefreshConstraints();
 
 						//Get Design points
 						std::vector< double > x( mesh.Points[i].DesignCoords );
@@ -130,6 +130,7 @@ namespace Pareto {
 						for(k=0;k<mesh.Points[i].LambdaCoords.size()-1;k++) { 
 							x.push_back( mesh.Points[i].LambdaCoords[k] ); 
 						}
+
 						//printf("Running optimization\n");
 						if( this->Opt->RunFrom( x ) ) {
 							//printf("Success!\n");
@@ -150,7 +151,7 @@ namespace Pareto {
 						//Pop the EQDist Constraints
 						//int iter;
 						//for(iter=0; iter<mesh.Points[i].Neighbors.size()/2; iter++) {
-							//Scal.EqualityConstraints.pop_back();
+							Scal.EqualityConstraints.pop_back();
 						//}
 						//printf("popped back\n");
 					}
