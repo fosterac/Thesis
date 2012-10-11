@@ -51,7 +51,7 @@ public:
 	public:
 		vertical_iterator( int c ) : column( c ) {}
 		typename T::value_type::value_type operator*() const { return (this->T::const_iterator::operator*())[column]; }
-		vertical_iterator& operator= (const typename T::iterator & rhs) { this->T::const_iterator::operator=(rhs); }
+		vertical_iterator& operator= (const typename T::const_iterator & rhs) { this->T::const_iterator::operator=(rhs); }
 	};
 	typedef std::vector< std::vector< double > > Data;
 };
@@ -60,22 +60,7 @@ public:
 
 // Tests vertical iterator concept
 TEST_F(VerticalIterTest, Alive) {
-
-	/*
-	class vertical_iterator : public Data::iterator {
-		int column;
-	public:
-		vertical_iterator( int col, Data::iterator i ) 
-			: column( col ), Data::iterator(i)  {}
-		vertical_iterator( int c ) : column( c ) {}
-		vertical_iterator( ) : column( 0 ) {}
-		//vertical_iterator() {}
-		double operator*() const { return (this->Data::iterator::operator*())[column]; }
-		vertical_iterator& operator= (const Data::iterator & rhs) { this->Data::iterator::operator=(rhs); }
-	};
-	*/
-
-	std::vector< std::vector< double > > data;
+	const std::vector< std::vector< double > > data;
 	std::vector< double > v(3);
 	v[0] = 0.0; v[1] = 1.0; v[2] = 2.0;
 	//data.push_back(v);
