@@ -24,6 +24,8 @@ protected:
 };
 
 
+
+
 // Tests boost lambda functionality
 TEST_F(LambdaTest, Alive) {
 	for_each(v.begin(), v.end(), cout << _1 << '\n');
@@ -39,4 +41,55 @@ TEST_F(LambdaTest, WrapProblem) {
 	Problem::Interface * P = Problem::Factory("BASIN", 1, 3);
 	cout << (P->Objectives[0]) (v) << endl;
 
+}
+
+class VerticalIterTest : public ::testing::Test {
+public:
+	template< typename T >
+	class vertical_iterator : public T::const_iterator {
+		int column;
+	public:
+		vertical_iterator( int c ) : column( c ) {}
+		typename T::value_type::value_type operator*() const { return (this->T::const_iterator::operator*())[column]; }
+		vertical_iterator& operator= (const typename T::iterator & rhs) { this->T::const_iterator::operator=(rhs); }
+	};
+	typedef std::vector< std::vector< double > > Data;
+};
+
+#include <algorithm>
+
+// Tests vertical iterator concept
+TEST_F(VerticalIterTest, Alive) {
+
+	/*
+	class vertical_iterator : public Data::iterator {
+		int column;
+	public:
+		vertical_iterator( int col, Data::iterator i ) 
+			: column( col ), Data::iterator(i)  {}
+		vertical_iterator( int c ) : column( c ) {}
+		vertical_iterator( ) : column( 0 ) {}
+		//vertical_iterator() {}
+		double operator*() const { return (this->Data::iterator::operator*())[column]; }
+		vertical_iterator& operator= (const Data::iterator & rhs) { this->Data::iterator::operator=(rhs); }
+	};
+	*/
+
+	std::vector< std::vector< double > > data;
+	std::vector< double > v(3);
+	v[0] = 0.0; v[1] = 1.0; v[2] = 2.0;
+	//data.push_back(v);
+	v[0]++ ; v[1]++ ; v[2]++ ;
+	//data.push_back(v);
+
+	vertical_iterator< Data > vi(1);
+	for(vi = data.begin(); vi != data.end(); vi++){
+		printf("%lf\n", *vi);
+	}
+
+	vertical_iterator< Data > vi1(1);
+	vertical_iterator< Data > vi2(1);
+	vi1 = data.begin();
+	vi2 = data.end();
+	printf("%lf\n", *std::min_element(vi1, vi2));
 }

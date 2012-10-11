@@ -33,6 +33,15 @@ add_test(
     COMMAND testAlgLib
 )
 
+add_executable(testInterpolator
+    test_interpolator.cpp
+)
+target_link_libraries(testInterpolator gtest gtest_main alglib )
+add_test(
+    NAME testInterpolator
+    COMMAND testInterpolator
+)
+
 file( COPY data/ DESTINATION data/)
 add_executable(testHypervolume
     test_hypervolume.cpp

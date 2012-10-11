@@ -1,4 +1,4 @@
-//Simple test to verify Nlopt functionality
+//Simple test to verify AlgLib functionality
 
 #include <gtest/gtest.h>
 
@@ -14,7 +14,89 @@ namespace {
 using namespace alglib;
 
 // Tests that the AlgLib interpolator works
-TEST(AlgLibTest, Alive) {
+ TEST(AlgLibTest, QNN) {
+    // This example illustrates basic concepts of the RBF models: creation, modification,
+    // evaluation.
+    // 
+    // Suppose that we have set of 2-dimensional points with associated
+    // scalar function values, and we want to build a RBF model using
+    // our data.
+    // 
+    // NOTE: we can work with 3D models too :)
+    // 
+    // Typical sequence of steps is given below:
+    // 1. we create RBF model object
+    // 2. we attach our dataset to the RBF model and tune algorithm settings
+    // 3. we rebuild RBF model using QNN algorithm on new data
+    // 4. we use RBF model (evaluate, serialize, etc.)
+    //
+    double v;
+
+    //
+    // Step 1: RBF model creation.
+    //
+    // We have to specify dimensionality of the space (2 or 3) and
+    // dimensionality of the function (scalar or vector).
+    //
+    rbfmodel model;
+    rbfcreate(2, 1, model);
+
+    // New model is empty - it can be evaluated,
+    // but we just get zero value at any point.
+    v = rbfcalc2(model, 0.0, 0.0);
+    printf("%.2f\n", double(v)); // EXPECTED: 0.000
+	EXPECT_NEAR( 0.0, double(v), 1e-3 );
+
+    //
+    // Step 2: we add dataset.
+    //
+    // XY arrays containt two points - x0=(-1,0) and x1=(+1,0) -
+    // and two function values f(x0)=2, f(x1)=3.
+    //
+    real_2d_array xy = "[[-1,0,2],[+1,0,3]]";
+    rbfsetpoints(model, xy);
+
+    // We added points, but model was not rebuild yet.
+    // If we call rbfcalc2(), we still will get 0.0 as result.
+    v = rbfcalc2(model, 0.0, 0.0);
+    printf("%.2f\n", double(v)); // EXPECTED: 0.000
+	EXPECT_NEAR( 0.0, double(v), 1e-3 );
+
+    //
+    // Step 3: rebuild model
+    //
+    // After we've configured model, we should rebuild it -
+    // it will change coefficients stored internally in the
+    // rbfmodel structure.
+    //
+    // By default, RBF uses QNN algorithm, which works well with
+    // relatively uniform datasets (all points are well separated,
+    // average distance is approximately same for all points).
+    // This default algorithm is perfectly suited for our simple
+    // made up data.
+    //
+    // NOTE: we recommend you to take a look at example of RBF-ML,
+    // multilayer RBF algorithm, which sometimes is a better
+    // option than QNN.
+    //
+    rbfreport rep;
+    rbfsetalgoqnn(model);
+    rbfbuildmodel(model, rep);
+    printf("%d\n", int(rep.terminationtype)); // EXPECTED: 1
+	EXPECT_NEAR( 1, int(rep.terminationtype), 0 );
+
+    //
+    // Step 4: model was built
+    //
+    // After call of rbfbuildmodel(), rbfcalc2() will return
+    // value of the new model.
+    //
+    v = rbfcalc2(model, 0.0, 0.0);
+    printf("%.2f\n", double(v)); // EXPECTED: 2.500
+	EXPECT_NEAR( 2.5, double(v), 1e-3 );
+	}
+
+ TEST(AlgLibTest, ML) {
 	//
     // This example shows how to build models with RBF-ML algorithm. Below
     // we assume that you already know basic concepts shown in the example
