@@ -146,7 +146,7 @@ public:
 
 		int k = 1*(DimObj - 1);
 
-		assert ( k == 1);
+		//assert ( k == 1);
 
 		int i;
 		for(i=0; i<dimObj; i++){

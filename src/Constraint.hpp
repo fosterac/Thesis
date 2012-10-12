@@ -26,7 +26,7 @@ protected:
 	int to;
 
 	double eval(const std::vector< double > &x) {
-		return sign * ( value - std::accumulate(x.begin() + from, x.begin() + to, 0.0) );
+		return this->sign * ( this->value - std::accumulate(x.begin() + this->from, x.begin() + this->to, 0.0) );
 	}
 
 public:
@@ -82,6 +82,9 @@ protected:
 	std::vector< double > const * x2;
 
 	double eval(const std::vector< double > &x){
+		//Assign NULL to deactivate constraints (always satisfied)
+		if( !(this->x1 && this->x2) ) return 0;
+
 		this->Feval(x);
 		return L2Dist(*this->x1, this->f) - L2Dist(*this->x2, this->f) ;
 	}
