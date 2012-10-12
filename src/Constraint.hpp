@@ -82,6 +82,9 @@ protected:
 	std::vector< double > const * x2;
 
 	double eval(const std::vector< double > &x){
+		//Assign NULL to deactivate constraints (always satisfied)
+		if( !(this->x1 && this->x2) ) return 0;
+
 		this->Feval(x);
 		return L2Dist(*this->x1, this->f) - L2Dist(*this->x2, this->f) ;
 	}
