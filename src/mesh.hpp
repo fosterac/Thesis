@@ -4,6 +4,12 @@
 #include <boost/bind.hpp>
 #include <boost/function.hpp>
 
+//for mesh writeout
+#include <string>
+#include <iostream>
+#include <fstream>
+#include <sstream>
+
 #include <cassert>
 #include <stdio.h>
 
@@ -12,6 +18,13 @@ namespace Mesh {
 	struct Interface {
 
 	};
+	template< typename T>
+	std::ostream& operator<<(std::ostream& os, const std::vector<T>& vec){
+		os << "[ " ;
+		int i;
+		for(i=0;i<vec.size()-1;i++){ os << vec[i] << ", " ;	}
+		return os << vec[i] << " ]" ;
+	}
 
 	class MeshBase : public Interface {
 	public:
@@ -42,6 +55,9 @@ namespace Mesh {
 				printf(") Links: ( ");
 				for(i=0;i<Neighbors.size();i++)			printf("%d ", Neighbors[i]);
 				printf(")\n");
+			}
+			friend std::ostream& operator<<(std::ostream& os, const MeshPoint& mp){
+				return os << mp.ObjectiveCoords;
 			}
 		};
 
@@ -83,6 +99,25 @@ namespace Mesh {
 			for(i=0;i<Corners.size();i++) Corners[i].Print();
 			printf("Points: \n");
 			for(i=0;i<Points.size();i++) Points[i].Print();
+		}
+		void WriteOut(const char* filename) {
+			std::ofstream os( filename );
+			os << "{" << std::endl;
+
+			std::vector<std::string> cols;
+			int i;
+			for(i=0;i<this->ObjectiveDim;i++) {
+				std::stringstream s;
+				s << "\"" << i << "\"" ;
+				cols.push_back( std::string( s.str() ) );
+			}
+			os << "\"columns\" : " << cols << "," << std::endl;
+
+			os << "\"data\" : ";
+			os << this->Points;
+
+			os << "}" << std::endl;
+			os.close();
 		}
 	};
 

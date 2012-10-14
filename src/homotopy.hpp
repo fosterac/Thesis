@@ -102,7 +102,6 @@ namespace Pareto {
 						
 						//NOTE: Pass only the required number of constraints to the 
 						//optimizer and then establish their neighbors.
-
 						int iter;
 						for(iter=0; iter<mesh.Points[i].Neighbors.size()/2; iter++) {
 							std::vector< double > *left = &mesh.Points[ mesh.Points[i].Neighbors[2*iter] ].ObjectiveCoords;
@@ -143,7 +142,9 @@ namespace Pareto {
 				}
 			}
 			delete this->Opt; 
-			mesh.Print();
+			
+			mesh.Print();			
+			mesh.WriteOut( "front.txt" );	
 		}
 	};
 }
