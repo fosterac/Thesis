@@ -14,16 +14,16 @@
 #include "optimizer.h"
 #include "mesh.hpp"
 
-#include "homotopy.hpp"
-
 #include <stdio.h>
+
+#include "homotopy.hpp"
 
 namespace {
 
 	TEST(HOMOTOPY, 2D){
 		//Set up the problem
 		Problem::Interface * P = Problem::Factory("FON", 2, 3);
-		//Problem::Interface * P = Problem::Factory("WFG5", 2, 5);
+		//Problem::Interface * P = Problem::Factory("WFG5", 3, 3);
 
 		//Instantiate the homotopy
 		Pareto::Homotopy h( P, 1e-4 );
