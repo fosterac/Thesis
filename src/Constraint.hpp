@@ -2,7 +2,7 @@
 General constraint interface
 */
 
-#include <boost/bind.hpp>
+#include "boost/bind.hpp"
 #include <cassert>
 
 template< typename T >

@@ -4,7 +4,7 @@
 #include <gtest/gtest.h>
 
 #include <vector>
-#include <boost/function.hpp>
+#include "boost/function.hpp"
 
 #include "Problems.h"
 #include "Scalarization.hpp"
