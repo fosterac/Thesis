@@ -1,6 +1,6 @@
 //Simple test to verify interpolator functionality
 
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 #include <vector>
 

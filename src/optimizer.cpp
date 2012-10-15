@@ -4,7 +4,7 @@
 
 #include "Problems.h"
 #include "Scalarization.hpp"
-#include <nlopt.hpp>
+#include "nlopt.hpp"
 #include "NloptAdapt.hpp"
 #include "optimizer.h"
 
