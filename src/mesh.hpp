@@ -15,9 +15,10 @@
 
 namespace Mesh {
 
-	struct Interface {
+	//Placeholder for a standard interface
+	struct Interface {	};
 
-	};
+	//Basic function for outputting vector to a stream
 	template< typename T>
 	std::ostream& operator<<(std::ostream& os, const std::vector<T>& vec){
 		os << "[ " ;
@@ -30,13 +31,15 @@ namespace Mesh {
 	public:
 		class MeshPoint {
 		public:
+			//The three basic pieces of each meshpoint
 			std::vector< double > DesignCoords;
 			std::vector< double > ObjectiveCoords;
-
-			//std::vector< MeshPoint* > Neighbors;
-			std::vector< int > Neighbors;
-
 			std::vector< double > LambdaCoords;
+
+			//Maintain neighbor references
+			//std::vector< MeshPoint* > Neighbors;
+			//By index in the global array
+			std::vector< int > Neighbors;
 
 			MeshPoint(	std::vector< double > &Design, 
 						std::vector< double > &Objective, 
@@ -44,6 +47,8 @@ namespace Mesh {
 						DesignCoords( Design ), 
 						ObjectiveCoords( Objective ), 
 						LambdaCoords( Lambdas ) { }
+
+			//Simple print function that dumps all values
 			void Print() {
 				int i;
 				printf("Design: ( ");
@@ -56,6 +61,8 @@ namespace Mesh {
 				for(i=0;i<Neighbors.size();i++)			printf("%d ", Neighbors[i]);
 				printf(")\n");
 			}
+
+			//For outputting a meshpoint to the front file
 			friend std::ostream& operator<<(std::ostream& os, const MeshPoint& mp){
 				return os << mp.ObjectiveCoords;
 			}
