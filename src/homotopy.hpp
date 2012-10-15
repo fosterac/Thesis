@@ -1,4 +1,13 @@
 namespace Pareto {
+
+	void PrintVec( std::vector< double > &vec ){
+		int i;
+		for(i=0;i<vec.size();i++){ 
+			printf("%lf ", vec[i] );
+		}
+		printf("\n");
+	}
+
 	class Homotopy {
 	private:
 		Problem::Interface *Prob;
@@ -60,11 +69,6 @@ namespace Pareto {
 			Pareto Set (not front) allows much larger mesh sizes without 
 			roundoff errors and contains points rooted in some kind of truth.
 			*/
-			/*
-			There seems to be some interplay with the lambda sum constraints here
-			whereby you need one or the other to get a satisfactory front. Shouldnt
-			be an issue in 2D...
-			*/
 			//Project the design space mesh onto the objective space
 			int m;
 			for(m=0;m<mesh.Points.size();m++){
@@ -97,7 +101,7 @@ namespace Pareto {
 				//for each point
 				int i;
 				//for(i=j%2; i<NumPoints; i+=2){
-				for(i=0; i<NumPoints; i++){
+				for(i=0; i<mesh.Points.size(); i++){
 					if( !mesh.Points[i].Neighbors.empty() ){
 						
 						//NOTE: Pass only the required number of constraints to the 
