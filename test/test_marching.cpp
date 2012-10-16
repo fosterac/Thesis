@@ -1,15 +1,15 @@
 //Basic marching homotopy test to validate additional
 //problem constraints
 
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 #include <vector>
-#include <boost/function.hpp>
+#include "boost/function.hpp"
 
 #include "Problems.h"
 #include "Scalarization.hpp"
 #include "Constraint.hpp"
-#include <nlopt.hpp>
+#include "nlopt.hpp"
 #include "NloptAdapt.hpp"
 #include "optimizer.h"
 

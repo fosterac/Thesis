@@ -1,7 +1,7 @@
 #include <vector>
 
-#include <boost/bind.hpp>
-#include <boost/function.hpp>
+#include "boost/bind.hpp"
+#include "boost/function.hpp"
 
 #include <string>
 #include <cassert>
@@ -164,6 +164,46 @@ public:
 	}
 };
 
+//DTLZ2
+class DTLZ2 : public Problem::Interface{
+private:
+	static const double PI = 3.14159;
+
+	double g( const std::vector< double > &x ){
+		int i;
+		double result = 0.0;
+		for(i=this->Objectives.size()-1;i<x.size();i++){
+			result += ( x[i] - 0.5 ) * ( x[i] - 0.5 );
+		}
+		return result;
+	}
+	double obj(const std::vector< double > &x, const int objNum){
+		if( objNum == 0 ) return (1 + this->g( x )) * cos( x[0] * PI/2.0 ) * cos( x[1] * PI/2.0 );
+		if( objNum == 1 ) return (1 + this->g( x )) * cos( x[0] * PI/2.0 ) * sin( x[1] * PI/2.0 );
+		if( objNum == 2 ) return (1 + this->g( x )) * sin( x[0] * PI/2.0 ) ;
+		return 0.0;
+	}
+public:
+	DTLZ2(int DimObj, int DimDesign) {
+		this->dimObj = DimObj;
+		this->dimDesign = DimDesign;
+
+		int i;
+		for(i=0; i<dimObj; i++){
+			typename Problem::FUNCTION f( boost::bind(&DTLZ2::obj, this, _1, i) );
+			this->Objectives.push_back(	f );
+		}
+		for(i=0; i<dimDesign; i++){
+			//The zero bound is enforced in the WFG code
+			//so we perturb it to allow the central difference
+			//scheme to work.
+			this->lowerBounds.push_back( 0.0 );
+			//this->lowerBounds.push_back( 1e-4 );
+			this->upperBounds.push_back( 1.0 );
+		}
+	}
+};
+
 Problem::Interface * Problem::Factory( std::string s, int DimObj, int DimDesign){
 	
 	Interface * toReturn = NULL;
@@ -189,10 +229,17 @@ Problem::Interface * Problem::Factory( std::string s, int DimObj, int DimDesign)
 		toReturn = new FON(DimObj, DimDesign);
 	}
 	
-	//Instantiate a WFG2 Problem
+	//Instantiate a WFG5 Problem
 	if ( s.compare(std::string("WFG5")) == 0 ){
 		//assert (DimDesign % 2 != 0 );
 		toReturn = new WFG5(DimObj, DimDesign);
+	}
+
+	//Instantiate a DTLZ2 Problem
+	if ( s.compare(std::string("DTLZ2")) == 0 ){
+		assert (DimObj == 3);
+		assert (DimDesign >= 2);
+		toReturn = new DTLZ2(DimObj, DimDesign);
 	}
 
 	return toReturn;

@@ -1,7 +1,7 @@
 /*
 Scalarizing adapter allowing dynamic weight changes
 */
-#include <boost/bind.hpp>
+#include "boost/bind.hpp"
 #include <cassert>
 #include <stdio.h>
 
