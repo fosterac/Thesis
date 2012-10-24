@@ -44,7 +44,7 @@ namespace Pareto {
 					std::vector<double> lam(Prob->Objectives.size(), 0.0);
 					lam[i] = 1.0;
 					S.SetWeights( &lam );
-					std::vector<double> x(Prob->dimDesign, 0.5);
+					std::vector<double> x(Prob->dimDesign, (double)(i+1) / (Prob->Objectives.size()+2));
 					op->RunFrom( x );
 					std::vector<double> f( GetF( Prob->Objectives, x) );
 

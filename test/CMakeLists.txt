@@ -79,6 +79,15 @@ add_test(
     COMMAND testMesh
 )
 
+add_executable(testEvaluator
+    test_evaluator.cpp
+)
+target_link_libraries(testEvaluator gtest gtest_main Problems )
+add_test(
+    NAME testEvaluator
+    COMMAND testEvaluator
+)
+
 add_executable(testOptimizer
     test_optimizer.cpp
 )
