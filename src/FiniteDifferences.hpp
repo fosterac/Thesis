@@ -1,5 +1,13 @@
 namespace FiniteDifferences {
-	struct CENTRAL {};
+    //Differencing options
+    enum FD_TYPE { CENTRAL, FORWARD };
+
+    //Finite difference parameters
+    struct Params_t {
+        double step;
+        FD_TYPE type;
+    };
+
 	template< typename T >
 	static double Central(const int dim, std::vector<double> &at, T& func, const double fd_step){
 		double tmp = at[dim];
@@ -14,7 +22,6 @@ namespace FiniteDifferences {
 
 		return (right - left) / (2*fd_step);
 	}
-	struct FORWARD {};
 	template< typename T >
 	static double Forward(const int dim, std::vector<double> &at, T& func, const double fd_step){
 		double tmp = at[dim];
@@ -40,6 +47,20 @@ namespace FiniteDifferences {
 		return (forward - center) / (fd_step);
 	}
 	
+    template<typename Grad, typename T>
+	void GradEval(Grad grad, T& func, const std::vector< double > & at, Params_t &par){
+		std::vector<double> local_at(at);
+        if(par.type == FORWARD) {
+            double f_at = (func) (local_at);
+            int i;
+		    for(i=0; i<at.size(); i++)	grad[i] = ForwardOpt<T>(i, local_at, f_at, func, par.step);
+        }
+        else{
+		    int i;
+		    for(i=0; i<at.size(); i++)  grad[i] = Central<T>(i, local_at, func, par.step);   
+        }
+	}
+    /*
 	template<typename Grad, typename T>
 	void GradEval(Grad grad, T& func, const std::vector< double > & at, double fd_step, CENTRAL c){
 		std::vector<double> local_at(at);
@@ -53,4 +74,5 @@ namespace FiniteDifferences {
 		int i;
 		for(i=0; i<at.size(); i++){	grad[i] = ForwardOpt<T>(i, local_at, f_at, func, fd_step); }
 	}
+    */
 }
