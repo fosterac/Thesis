@@ -65,6 +65,7 @@ namespace Homotopy {
                 CacheType::iterator i = this->cache_.find( x );
                 //spit out the answer if we already have it
                 if( i != this->cache_.end() ) {
+                    //printf("Cached result!\n");
                     return i->second;
                 }
                 else {

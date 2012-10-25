@@ -82,7 +82,8 @@ namespace {
 		PrintF(x1, P->Objectives);
 
 		//DynamicScalarization< typename Problem::FUNCTION > D(P);
-        DynamicScalarization< Evaluator<EvaluationStrategy::Local< functionSet_t > > > D(P);
+        //DynamicScalarization< Evaluator<EvaluationStrategy::Local< functionSet_t > > > D(P);
+        DynamicScalarization< Evaluator< EvaluationStrategy::Cached< EvaluationStrategy::Local< functionSet_t > > > > D(P);
 		//StepConstraint< typename Problem::FUNCTION > C(NULL, step);
 		FStepConstraint< typename Problem::FUNCTION > C(P->Objectives, NULL, step);
 		D.EqualityConstraints.push_back( C.function );
