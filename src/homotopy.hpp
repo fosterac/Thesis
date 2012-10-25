@@ -11,7 +11,8 @@ namespace Pareto {
 	class Homotopy {
 	private:
 		Problem::Interface *Prob;
-		DynamicScalarization< typename Problem::FUNCTION > Scal;
+		//DynamicScalarization< typename Problem::FUNCTION > Scal;
+        DynamicScalarization< Evaluator< EvaluationStrategy::Cached< EvaluationStrategy::Local< functionSet_t > > > > Scal;
 		Optimizer * Opt;
 		//OptNlopt * Opt;
 
@@ -35,8 +36,12 @@ namespace Pareto {
 			Opt( NULL ) {
 				
 				//Find the individual optimae using a fixed scalarization
-				FixedScalarization< typename Problem::FUNCTION > S(Prob);
-				Optimizer * op = new OptNlopt(S.f, &S, 1e-4);
+				//FixedScalarization< typename Problem::FUNCTION > S(Prob);
+                FixedScalarization< Evaluator<EvaluationStrategy::Local< functionSet_t > > > S(Prob);
+                FiniteDifferences::Params_t fd_par;
+                fd_par.step = 1e-6;
+                fd_par.type = FiniteDifferences::CENTRAL;
+				Optimizer * op = new OptNlopt(S.f, &S, 1e-4, fd_par);
 
 				int i;
 				for( i=0; i<Prob->Objectives.size(); i++){
@@ -91,8 +96,12 @@ namespace Pareto {
 				//Scal.EqualityConstraints.push_back( NeighborConstraints[n]->function );
 			}
 
+            FiniteDifferences::Params_t fd_par;
+                fd_par.step = 1e-6;
+                fd_par.type = FiniteDifferences::CENTRAL;
+
 			//Construct optimizer
-			this->Opt = new OptNlopt(Scal.f, &Scal, tolerance);
+			this->Opt = new OptNlopt(Scal.f, &Scal, tolerance, fd_par);
 
 			//Run a set of updates
 			int j;
