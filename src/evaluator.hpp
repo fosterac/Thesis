@@ -19,7 +19,12 @@ namespace Homotopy {
     public:
         Evaluator( typename T::BaseType p ) : impl_(p) {}
         objVars_t eval( const designVars_t &x ) {
-            return impl_.eval( x );
+            return this->impl_.eval( x );
+        }
+        objVars_t eval( const designVars_t &x, bool &valid ) {
+            objVars_t result( this->impl_.eval( x ) );
+            valid = !result.empty();
+            return result;
         }
     };
 
@@ -60,6 +65,7 @@ namespace Homotopy {
                 CacheType::iterator i = this->cache_.find( x );
                 //spit out the answer if we already have it
                 if( i != this->cache_.end() ) {
+                    //printf("Cached result!\n");
                     return i->second;
                 }
                 else {

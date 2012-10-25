@@ -9,13 +9,15 @@
 
 #include "Problems.h"
 
+#include "evaluator.hpp"
 #include "Scalarization.hpp"
+using namespace Homotopy;
 
 #include "nlopt.hpp"
 #include "NloptAdapt.hpp"
 
 
-#include "optimizer.h"
+#include "optimizer.hpp"
 
 namespace {
 
@@ -25,13 +27,18 @@ TEST(OPTIMIZERTest, Alive) {
 	int DesignVars = 3;
 
 	//Problem::Interface * P = Problem::Factory("BASIN", 1, DesignVars);
-	//Problem::Interface * P = Problem::Factory("FON", 2, DesignVars);
-	Problem::Interface * P = Problem::Factory("CONST_TEST", 1, 2);
+	Problem::Interface * P = Problem::Factory("FON", 2, DesignVars);
+	//Problem::Interface * P = Problem::Factory("CONST_TEST", 1, 2);
 
 	//DynamicScalarization< typename Problem::FUNCTION > S(P);
-	FixedScalarization< typename Problem::FUNCTION > S(P);
+	//FixedScalarization< typename Problem::FUNCTION > S(P);
+    FixedScalarization< Evaluator<EvaluationStrategy::Local< functionSet_t > > > S(P);
 
-	Optimizer * op = new OptNlopt(S.f, &S, 1e-4);
+    FiniteDifferences::Params_t fd_par;
+    fd_par.step = 1e-6;
+    fd_par.type = FiniteDifferences::CENTRAL;
+
+	Optimizer * op = new OptNlopt(S.f, &S, 1e-4, fd_par);
 	
 	printf("starting at: ");
 	std::vector<double> x(S.dimDesign);
@@ -47,7 +54,8 @@ TEST(OPTIMIZERTest, Alive) {
 	for(i=0; i<w.size(); i++) { w[i] = 0.5; }
 
 	//S.SetWeights(&w);
-	double result = op->RunFrom(x);
+	op->RunFrom(x);
+    double result = S(x);
 	
 	printf("minimum at: ");
 	for(i=0; i<x.size(); i++) { printf("%lf ", x[i]); }

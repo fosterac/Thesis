@@ -7,11 +7,13 @@
 #include "boost/function.hpp"
 
 #include "Problems.h"
+#include "evaluator.hpp"
 #include "Scalarization.hpp"
+using namespace Homotopy;
 #include "Constraint.hpp"
 #include "nlopt.hpp"
 #include "NloptAdapt.hpp"
-#include "optimizer.h"
+#include "optimizer.hpp"
 
 #include <stdio.h>
 
@@ -66,20 +68,27 @@ namespace {
 		//step = 0.1;
 		//Problem::Interface * P = Problem::Factory("WFG2", 2, 5);
 
-		FixedScalarization< typename Problem::FUNCTION > S(P);
+		//FixedScalarization< typename Problem::FUNCTION > S(P);
+        FixedScalarization< Evaluator<EvaluationStrategy::Local< functionSet_t > > > S(P);
+
+        FiniteDifferences::Params_t fd_par;
+        fd_par.step = 1e-6;
+        fd_par.type = FiniteDifferences::FORWARD;
 		
 		//Get the starting point
-		Optimizer * op = new OptNlopt(P->Objectives[1], &S, 1e-4);
+		Optimizer * op = new OptNlopt(P->Objectives[1], &S, 1e-4, fd_par);
 		std::vector<double> x1(P->dimDesign, 0.5);
 		op->RunFrom(x1);
 		PrintF(x1, P->Objectives);
 
-		DynamicScalarization< typename Problem::FUNCTION > D(P);
+		//DynamicScalarization< typename Problem::FUNCTION > D(P);
+        //DynamicScalarization< Evaluator<EvaluationStrategy::Local< functionSet_t > > > D(P);
+        DynamicScalarization< Evaluator< EvaluationStrategy::Cached< EvaluationStrategy::Local< functionSet_t > > > > D(P);
 		//StepConstraint< typename Problem::FUNCTION > C(NULL, step);
 		FStepConstraint< typename Problem::FUNCTION > C(P->Objectives, NULL, step);
 		D.EqualityConstraints.push_back( C.function );
 
-		op = new OptNlopt(D.f, &D, 1e-4);
+		op = new OptNlopt(D.f, &D, 1e-4, fd_par);
 		x1.push_back(0.5);
 		std::vector<double> x(x1);
 
