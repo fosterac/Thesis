@@ -17,24 +17,28 @@ namespace Homotopy {
     class Evaluator {
         T impl_;
     public:
-        Evaluator( Problem::Interface * p ) : impl_(p) {}
-        objVars_t eval( designVars_t &x ) {
+        Evaluator( typename T::BaseType p ) : impl_(p) {}
+        objVars_t eval( const designVars_t &x ) {
             return impl_.eval( x );
         }
     };
 
     namespace EvaluationStrategy {
         //Simple local, sequential evaluation
+        template< typename T >
         class Local {
         protected:
-            Problem::Interface * P;
+            T& P;
         public:
-            Local ( Problem::Interface * p ) : P(p) {}
-            objVars_t eval( designVars_t &x ) {
-                objVars_t results( P->dimObj );
+            //Define the root type
+            typedef T& BaseType;
+
+            Local ( T& p ) : P(p) {}
+            objVars_t eval( const designVars_t &x ) {
+                objVars_t results( this->P.size() );
                 int i;
-                for(i=0; i<P->dimObj; i++){
-                    results[i] = (P->Objectives[i])( x );
+                for(i=0; i<this->P.size(); i++){
+                    results[i] = (this->P[i])( x );
                 }
                 return results;
             }
@@ -48,8 +52,10 @@ namespace Homotopy {
             typedef std::map< designVars_t, objVars_t > CacheType;
             CacheType cache_;
         public:
-            Cached ( Problem::Interface * p ) : impl_(p) {}
-            objVars_t eval( designVars_t &x ) {
+            //Pass along the root type (for constructor)
+            typedef typename T::BaseType BaseType;
+            Cached ( typename T::BaseType p ) : impl_(p) {}
+            objVars_t eval( const designVars_t &x ) {
                 //search the cache for the designVars
                 CacheType::iterator i = this->cache_.find( x );
                 //spit out the answer if we already have it
@@ -60,7 +66,7 @@ namespace Homotopy {
                     //evaluate the designVars
                     objVars_t result ( impl_.eval( x ) ) ;
                     //cache the result
-                    this->cache_[ x ] = result;
+                    if( !result.empty() ) this->cache_[ x ] = result;
                     return result;
                 }
             }

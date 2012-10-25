@@ -19,7 +19,7 @@ namespace {
         Problem::Interface * P = Problem::Factory("FON", 2, 3);
 
         //Set up the evaluator framework
-        Evaluator<EvaluationStrategy::Local> E( P );
+        Evaluator<EvaluationStrategy::Local< functionSet_t > > E( P->Objectives );
 
         //independent variables
         std::vector< double > v(3, 0.5);
@@ -38,7 +38,7 @@ namespace {
         Problem::Interface * P = Problem::Factory("FON", 2, 3);
 
         //Set up the evaluator framework
-        Evaluator<EvaluationStrategy::Cached< EvaluationStrategy::Local> > E( P );
+        Evaluator< EvaluationStrategy::Cached < EvaluationStrategy::Local < functionSet_t > > > E( P->Objectives );
 
         //independent variables
         std::vector< double > v(3, 0.5);
