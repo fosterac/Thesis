@@ -6,16 +6,14 @@
 
 #include <vector>
 #include "boost/function.hpp"
+#include "boost/bind.hpp"
 
 #include "Problems.h"
 
+#include "HomotopyTypes.h"
+
 #include "evaluator.hpp"
 #include "Scalarization.hpp"
-using namespace Homotopy;
-
-#include "nlopt.hpp"
-#include "NloptAdapt.hpp"
-
 
 #include "optimizer.hpp"
 
@@ -26,23 +24,22 @@ TEST(OPTIMIZERTest, Alive) {
 	
 	int DesignVars = 3;
 
+    //Choose a Problem to optimize
 	//Problem::Interface * P = Problem::Factory("BASIN", 1, DesignVars);
 	Problem::Interface * P = Problem::Factory("FON", 2, DesignVars);
 	//Problem::Interface * P = Problem::Factory("CONST_TEST", 1, 2);
 
-	//DynamicScalarization< typename Problem::FUNCTION > S(P);
-	//FixedScalarization< typename Problem::FUNCTION > S(P);
+    //Scalarize the problem
     FixedScalarization< Evaluator<EvaluationStrategy::Local< functionSet_t > > > S(P);
 
-    FiniteDifferences::Params_t fd_par;
-    fd_par.step = 1e-6;
-    fd_par.type = FiniteDifferences::CENTRAL;
+    //Establish parameters for finite differences
+    FiniteDifferences::Params_t FDpar = { 1e-6, FiniteDifferences::CENTRAL };
 
-	Optimizer * op = new OptNlopt(S.f, &S, 1e-4, fd_par);
+    //Create optimizer
+	Optimizer * op = new OptNlopt(&S, 1e-4, FDpar);
 	
 	printf("starting at: ");
 	std::vector<double> x(S.dimDesign);
-	//std::vector<double> x(2);
 	int i;
 	for(i=0; i<x.size(); i++) { 
 		x[i] = 0.3;
@@ -50,16 +47,18 @@ TEST(OPTIMIZERTest, Alive) {
 	}
 	printf("\n");
 
+    //Establish a weighting scheme
 	std::vector<double> w(P->Objectives.size());
 	for(i=0; i<w.size(); i++) { w[i] = 0.5; }
-
 	//S.SetWeights(&w);
+
+    //Run the optimization
 	op->RunFrom(x);
+
+    //Get & print results
     double result = S(x);
-	
 	printf("minimum at: ");
 	for(i=0; i<x.size(); i++) { printf("%lf ", x[i]); }
-
 	printf(" =  %lf\n", result);
 }
 

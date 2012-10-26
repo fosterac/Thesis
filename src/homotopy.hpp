@@ -36,12 +36,10 @@ namespace Pareto {
 			Opt( NULL ) {
 				
 				//Find the individual optimae using a fixed scalarization
-				//FixedScalarization< typename Problem::FUNCTION > S(Prob);
-                FixedScalarization< Evaluator<EvaluationStrategy::Local< functionSet_t > > > S(Prob);
-                FiniteDifferences::Params_t fd_par;
-                fd_par.step = 1e-6;
-                fd_par.type = FiniteDifferences::CENTRAL;
-				Optimizer * op = new OptNlopt(S.f, &S, 1e-4, fd_par);
+                FixedScalarization< Evaluator< EvaluationStrategy::Cached< EvaluationStrategy::Local< functionSet_t > > > > S(Prob);
+                //Establish finite difference parameters
+                FiniteDifferences::Params_t FDpar = { 1e-6, FiniteDifferences::CENTRAL };
+				Optimizer * op = new OptNlopt( &S, 1e-4, FDpar);
 
 				int i;
 				for( i=0; i<Prob->Objectives.size(); i++){
@@ -50,7 +48,10 @@ namespace Pareto {
 					lam[i] = 1.0;
 					S.SetWeights( &lam );
 					std::vector<double> x(Prob->dimDesign, (double)(i+1) / (Prob->Objectives.size()+2));
-					op->RunFrom( x );
+
+                    OptNlopt::EXIT_COND flag = OptNlopt::RERUN;
+                    while( flag == OptNlopt::RERUN ) flag = (OptNlopt::EXIT_COND) op->RunFrom( x );
+
 					std::vector<double> f( GetF( Prob->Objectives, x) );
 
 					//Cache the results
@@ -96,12 +97,11 @@ namespace Pareto {
 				//Scal.EqualityConstraints.push_back( NeighborConstraints[n]->function );
 			}
 
-            FiniteDifferences::Params_t fd_par;
-                fd_par.step = 1e-6;
-                fd_par.type = FiniteDifferences::CENTRAL;
+            //Establish finite difference parameters
+            FiniteDifferences::Params_t FDpar = { 1e-6, FiniteDifferences::CENTRAL };
 
 			//Construct optimizer
-			this->Opt = new OptNlopt(Scal.f, &Scal, tolerance, fd_par);
+			this->Opt = new OptNlopt(&Scal, tolerance, FDpar);
 
 			//Run a set of updates
 			int j;
@@ -135,7 +135,10 @@ namespace Pareto {
 							x.push_back( mesh.Points[i].LambdaCoords[k] ); 
 						}
 
-						if( this->Opt->RunFrom( x ) ) {
+                        OptNlopt::EXIT_COND flag = OptNlopt::RERUN;
+                        while( flag == OptNlopt::RERUN ) flag = (OptNlopt::EXIT_COND)this->Opt->RunFrom( x );
+
+						if( flag == OptNlopt::SUCCESS ) {
 							//Update design points
 							mesh.Points[i].DesignCoords.assign( x.begin(), x.begin() + Prob->dimDesign);
 

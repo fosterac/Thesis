@@ -1,7 +1,7 @@
 namespace FiniteDifferences {
+
     //Differencing options
     enum FD_TYPE { CENTRAL, FORWARD };
-
     //Finite difference parameters
     struct Params_t {
         double step;
@@ -47,6 +47,7 @@ namespace FiniteDifferences {
 		return (forward - center) / (fd_step);
 	}
 	
+    //TODO: Make this a template specialization on par.type
     template<typename Grad, typename T>
 	void GradEval(Grad grad, T& func, const std::vector< double > & at, Params_t &par){
 		std::vector<double> local_at(at);
@@ -60,19 +61,4 @@ namespace FiniteDifferences {
 		    for(i=0; i<at.size(); i++)  grad[i] = Central<T>(i, local_at, func, par.step);   
         }
 	}
-    /*
-	template<typename Grad, typename T>
-	void GradEval(Grad grad, T& func, const std::vector< double > & at, double fd_step, CENTRAL c){
-		std::vector<double> local_at(at);
-		int i;
-		for(i=0; i<at.size(); i++){	grad[i] = Central<T>(i, local_at, func, fd_step); }
-	}
-	template<typename Grad, typename T>
-	void GradEval(Grad grad, T& func, const std::vector< double > & at, double fd_step, FORWARD f){
-		std::vector<double> local_at(at);
-		double f_at = (func) (local_at);
-		int i;
-		for(i=0; i<at.size(); i++){	grad[i] = ForwardOpt<T>(i, local_at, f_at, func, fd_step); }
-	}
-    */
 }

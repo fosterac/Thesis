@@ -3,8 +3,6 @@
 
 #include <vector>
 
-#include "Problems.h"
-
 namespace Homotopy {
 
     //Point variables
@@ -13,7 +11,7 @@ namespace Homotopy {
     typedef std::vector< double > lamVars_t;
 
     //Function types
-    typedef Problem::FUNCTION function_t;
+    typedef boost::function<double (const std::vector<double> &)> function_t;
     typedef std::vector< function_t > functionSet_t;
 }
 

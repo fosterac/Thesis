@@ -1,8 +1,7 @@
 #ifndef evaluator_hpp
 #define evaluator_hpp
 
-#include <boost/bind.hpp>
-#include <boost/thread.hpp>
+#include "boost/bind.hpp"
 
 #include "HomotopyTypes.h"
 
@@ -37,7 +36,6 @@ namespace Homotopy {
         public:
             //Define the root type
             typedef T& BaseType;
-
             Local ( T& p ) : P(p) {}
             objVars_t eval( const designVars_t &x ) {
                 objVars_t results( this->P.size() );

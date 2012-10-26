@@ -2,21 +2,49 @@
 #define optimizer_hpp
 
 #include "HomotopyTypes.h"
-
 using namespace Homotopy;
 
 class Optimizer {
 public:
 	//virtual double RunFrom(std::vector< double > &) = 0;
-	virtual int RunFrom(std::vector< double > &) = 0;
+	virtual int RunFrom(designVars_t &) = 0;
 	virtual void RefreshConstraints() = 0;
 };
 
+#include "boost/bind.hpp"
+#include "boost/function.hpp"
+
+//Maintains validity state for groups of evaluations
+//Can be extended to interface with Comms?
+class EvaluationController {
+    double evalAdapter( const designVars_t &x ) {
+        bool tmp = false;
+        double result( (*this->S)( x, tmp ) );
+        this->valid &= tmp;
+        return result;
+    }
+    ScalarizationInterface *S;
+public:
+    bool valid;
+    function_t objFunc;
+    EvaluationController ( ScalarizationInterface *s ) :  S(s), valid(false) {
+        function_t f ( boost::bind( &EvaluationController::evalAdapter, this, _1 ) );
+        this->objFunc = f;
+    }
+};
+
+#include "nlopt.hpp"
+#include "NloptAdapt.hpp"
+
+#include <string>
+#include <stdio.h>
+
 //NloptBased optimizer
 class OptNlopt : public Optimizer {
-private:
-	ScalarizationInterface *S;
-	NloptAdapt< typename Problem::FUNCTION > NA;
+private:    
+    ScalarizationInterface *S;
+    EvaluationController E;
+	NloptAdapt< function_t > NA;
 	nlopt::opt opt;
 
 	double tolerance;
@@ -24,8 +52,11 @@ private:
 	std::vector< double > InEqTolerances;
 
 public:
-    OptNlopt(function_t &Obj, ScalarizationInterface *s, double tolerance, FiniteDifferences::Params_t fd_par) : 
-				    Optimizer(), S(s), NA(Obj, &S->EqualityConstraints, &S->InequalityConstraints, fd_par), 
+    enum EXIT_COND { SUCCESS, RERUN, ERROR };
+
+    OptNlopt(ScalarizationInterface *s, double tolerance, FiniteDifferences::Params_t fd_par) : 
+				    Optimizer(), S(s), E(s), 
+                    NA(E.objFunc, &S->EqualityConstraints, &S->InequalityConstraints, E.valid, fd_par ), 
 				    opt(nlopt::LD_SLSQP, S->dimDesign), tolerance(tolerance), 
 				    EqTolerances(S->EqualityConstraints.size(), tolerance),
 				    InEqTolerances(S->InequalityConstraints.size(), tolerance){
@@ -55,15 +86,23 @@ public:
     }
 
 	int RunFrom(std::vector< double > &x) {
-	    int result = 0;
+	    int result = SUCCESS;
 	    double minf;
 	    try {
-		    //nlopt::result result = opt.optimize(x, minf);
-		    result = opt.optimize(x, minf);
+		    opt.optimize(x, minf);
 	    }
 	    //catch (const std::exception& ex) {
+        catch (const nlopt::forced_stop& ex) {
+            //Needs to run again
+		    result = RERUN;
+	    }
+        catch (const nlopt::roundoff_limited& ex) {
+            printf("WARNING: threw nlopt::roundoff_limited\n");
+		    result = ERROR;
+	    }
 	    catch (const std::runtime_error& ex) {
-		    result = 0;
+            printf("WARNING: threw std::runtime with %s\n", ex.what());
+		    result = ERROR;
 	    }
 
 	    return result;

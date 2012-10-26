@@ -1,3 +1,6 @@
+#ifndef NloptAdapt_hpp
+#define NloptAdapt_hpp
+
 /*
 Adapter wrapping a function object in the Nlopt library interface
 */
@@ -11,8 +14,8 @@ private:
 	T & obj;
 	std::vector< T > * EqConstr;
 	std::vector< T > * InEqConstr;
-
-	double fd_step;
+    
+    bool &Validity;
 
     FiniteDifferences::Params_t fd_params;
 
@@ -23,35 +26,44 @@ private:
 		std::vector< double > at(n);
 		int i;
 		for(i=0; i<n; i++){ at[i] = x[i]; }
+
+        //Could abstract this into a universal OptController interface
+        nl->Validity = true;
 		
+        //Evaluate constraints and gradients
 		for(i=0; i<m; i++){
 			result[i] = eval(Constr[i], at);
-			//if(grad) FiniteDifferences::GradEval<double *, T>(grad+i*n, Constr[i], at, nl->fd_step, FiniteDifferences::FORWARD());
-			//if(grad) FiniteDifferences::GradEval<double *, T>(grad+i*n, Constr[i], at, nl->fd_step, FiniteDifferences::CENTRAL());
             if(grad) FiniteDifferences::GradEval<double *, T>(grad+i*n, Constr[i], at, nl->fd_params);
 		}
+
+        //If all the evaluations weren't valid
+        //force stop the evaluator
+        if(! nl->Validity) throw nlopt::forced_stop();
 	}
 
 public:
-	NloptAdapt(T &Obj, double FD_Step) : obj(Obj), EqConstr(NULL), InEqConstr(NULL), fd_step(FD_Step) {}
-	NloptAdapt(T &Obj, std::vector<T> *EqConstr, std::vector<T> *InEqConstr, double FD_Step) : obj(Obj), EqConstr(EqConstr), InEqConstr(InEqConstr), fd_step(FD_Step) {}
-    NloptAdapt(T &Obj, std::vector<T> *EqConstr, std::vector<T> *InEqConstr, FiniteDifferences::Params_t fd_params) : 
-                obj(Obj), EqConstr(EqConstr), InEqConstr(InEqConstr), fd_params( fd_params ) {}
+    NloptAdapt(T &Obj, std::vector<T> *EqConstr, std::vector<T> *InEqConstr, bool& validity, FiniteDifferences::Params_t fd_params) : 
+                obj(Obj), EqConstr(EqConstr), InEqConstr(InEqConstr), Validity( validity ), fd_params( fd_params ) {}
 
 	//C-style callback interfaces expected by Nlopt
 	static double ObjIface(const std::vector<double> &x, std::vector<double> &grad, void *my_func_data){
 		assert ( my_func_data != NULL );
 		NloptAdapt *nl = reinterpret_cast<NloptAdapt *>(my_func_data);
+
+        //Could abstract this into a universal OptController interface
+        nl->Validity = true;
+
+        //Evaluate objectives and gradient
 		if(!grad.empty()){
-			//FiniteDifferences::GradEval<std::vector<double> &, T>(grad, nl->obj,  x,  nl->fd_step, FiniteDifferences::FORWARD() );
-			//FiniteDifferences::GradEval<std::vector<double> &, T>(grad, nl->obj,  x,  nl->fd_step, FiniteDifferences::CENTRAL() );
             FiniteDifferences::GradEval<std::vector<double> &, T>(grad, nl->obj,  x,  nl->fd_params );
 		}
-		return eval(nl->obj, x);
-	}
+		double result = eval(nl->obj, x);
 
-	//C-style interface for single constraints
-	/*static double ConstrIface(const std::vector<double> &x, std::vector<double> &grad, void *data){	}*/
+        //If all the evaluations weren't valid
+        //force stop the evaluator
+        if(! nl->Validity) throw nlopt::forced_stop();
+        else return result;
+	}
 
 	//C-style interface for multiple constriaints
 	static void EqConstrIface(unsigned m, double* result, unsigned n, const double* x, double* grad, void* data){
@@ -64,4 +76,9 @@ public:
 		NloptAdapt *nl = reinterpret_cast<NloptAdapt *>(data);
 		ConstrIface( m, result, n, x, grad, *nl->InEqConstr, nl);
 	}
+
+    //C-style interface for single constraints
+	/*static double ConstrIface(const std::vector<double> &x, std::vector<double> &grad, void *data){	}*/
 };
+
+#endif

@@ -45,11 +45,14 @@ protected:
 	Problem::Interface * P;
 public:
     T e;
-    bool valid;
     Scalarization(Problem::Interface * p) : ScalarizationInterface(p),
-                                            P(p), e(P->Objectives), valid(true)
+                                            P(p), e(P->Objectives)
     {
-        this->f = boost::bind( &Scalarization<T>::eval, this, _1, this->valid);
+        //int double (Scalarization<T>::*which_eval) (const std::vector<double>&) = &Scalarization<T>::eval;
+        //this->f = boost::bind( which_eval, this, _1);
+        //this->f = boost::bind( &Scalarization<T>::eval, this, _1, this->valid);
+        //this->f = boost::bind( &Scalarization<T>::eval, this, _1 );
+        
 		this->dimObj = 1;
 		this->dimDesign = P->dimDesign;
 	}
@@ -129,31 +132,7 @@ protected:
             return std::inner_product( weights.begin(), weights.end(), result.begin(), 0.0 );
         }
 	}
-    /*
-	double eval(const std::vector<double> &at){	
-		//Allow for the weights to be part of the optimization
-		//by assuming theyre tacked on to the end of the at vector
 
-		//NOTE: the last weight is the one implied by the 1-sum(others)
-
-		double result = 0.0;
-		double weight_sum = 0.0;
-
-		//Determine where the weights start
-		int offset = this->P->dimDesign;
-
-		//Separate the set of "Problem" variables
-		const std::vector< double > vars(at.begin(), at.begin() + offset);
-
-		//Evaluate the explicitly weighted components
-		int i;
-		for(i=0;i<(this->P->Objectives.size() - 1);i++){
-			result += at[i + offset] * (this->P->Objectives[i])(vars);
-			weight_sum += at[i + offset];
-		}
-		result += (1.0 - weight_sum) * (this->P->Objectives[i])(vars);
-		return result;
-	}*/
 public:
 	DynamicScalarization(Problem::Interface * p) : Scalarization<T>(p) {
 		this->dimDesign = this->P->dimDesign + this->P->Objectives.size() - 1;
