@@ -45,11 +45,14 @@ protected:
 	Problem::Interface * P;
 public:
     T e;
-    bool valid;
     Scalarization(Problem::Interface * p) : ScalarizationInterface(p),
-                                            P(p), e(P->Objectives), valid(true)
+                                            P(p), e(P->Objectives)
     {
-        this->f = boost::bind( &Scalarization<T>::eval, this, _1, this->valid);
+        //int double (Scalarization<T>::*which_eval) (const std::vector<double>&) = &Scalarization<T>::eval;
+        //this->f = boost::bind( which_eval, this, _1);
+        //this->f = boost::bind( &Scalarization<T>::eval, this, _1, this->valid);
+        //this->f = boost::bind( &Scalarization<T>::eval, this, _1 );
+        
 		this->dimObj = 1;
 		this->dimDesign = P->dimDesign;
 	}

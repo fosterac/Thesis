@@ -70,12 +70,14 @@ namespace {
 
         //Scalarize the problem
         FixedScalarization< Evaluator<EvaluationStrategy::Local< functionSet_t > > > S(P);
+        std::vector< double > w(2, 0.0); w[1] = 1.0;
+        S.SetWeights(&w);
 
         //Finite difference params
         FiniteDifferences::Params_t FDpar = { 1e-6, FiniteDifferences::FORWARD };
 		
 		//Get the starting point
-		Optimizer * op = new OptNlopt(P->Objectives[1], &S, 1e-4, FDpar);
+		Optimizer * op = new OptNlopt(&S, 1e-4, FDpar);
 		std::vector<double> x1(P->dimDesign, 0.5);
 		op->RunFrom(x1);
 		PrintF(x1, P->Objectives);
@@ -88,7 +90,7 @@ namespace {
 		FStepConstraint< typename Problem::FUNCTION > C(P->Objectives, NULL, step);
 		D.EqualityConstraints.push_back( C.function );
 
-		op = new OptNlopt(D.f, &D, 1e-4, FDpar);
+		op = new OptNlopt(&D, 1e-4, FDpar);
 		x1.push_back(0.5);
 		std::vector<double> x(x1);
 

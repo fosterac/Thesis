@@ -6,16 +6,14 @@
 
 #include <vector>
 #include "boost/function.hpp"
+#include "boost/bind.hpp"
 
 #include "Problems.h"
 
+#include "HomotopyTypes.h"
+
 #include "evaluator.hpp"
 #include "Scalarization.hpp"
-using namespace Homotopy;
-
-#include "nlopt.hpp"
-#include "NloptAdapt.hpp"
-
 
 #include "optimizer.hpp"
 
@@ -38,7 +36,7 @@ TEST(OPTIMIZERTest, Alive) {
     FiniteDifferences::Params_t FDpar = { 1e-6, FiniteDifferences::CENTRAL };
 
     //Create optimizer
-	Optimizer * op = new OptNlopt(S.f, &S, 1e-4, FDpar);
+	Optimizer * op = new OptNlopt(&S, 1e-4, FDpar);
 	
 	printf("starting at: ");
 	std::vector<double> x(S.dimDesign);
