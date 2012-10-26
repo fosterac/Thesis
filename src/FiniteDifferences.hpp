@@ -1,7 +1,7 @@
 namespace FiniteDifferences {
+
     //Differencing options
     enum FD_TYPE { CENTRAL, FORWARD };
-
     //Finite difference parameters
     struct Params_t {
         double step;
@@ -47,6 +47,7 @@ namespace FiniteDifferences {
 		return (forward - center) / (fd_step);
 	}
 	
+    //TODO: Make this a template specialization on par.type
     template<typename Grad, typename T>
 	void GradEval(Grad grad, T& func, const std::vector< double > & at, Params_t &par){
 		std::vector<double> local_at(at);

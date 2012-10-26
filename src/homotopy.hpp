@@ -96,9 +96,8 @@ namespace Pareto {
 				//Scal.EqualityConstraints.push_back( NeighborConstraints[n]->function );
 			}
 
-            FiniteDifferences::Params_t fd_par;
-                fd_par.step = 1e-6;
-                fd_par.type = FiniteDifferences::CENTRAL;
+            //Establish finite difference parameters
+            FiniteDifferences::Params_t FDpar = { 1e-6, FiniteDifferences::CENTRAL };
 
 			//Construct optimizer
 			this->Opt = new OptNlopt(Scal.f, &Scal, tolerance, fd_par);
