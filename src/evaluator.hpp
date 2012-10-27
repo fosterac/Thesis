@@ -72,6 +72,10 @@ namespace Homotopy {
                     //cache the result
                     if( !result.empty() ) this->cache_[ x ] = result;
                     return result;
+
+                    //Uncomment to test cache misses
+                    //objVars_t empty;
+                    //return empty;
                 }
             }
         };

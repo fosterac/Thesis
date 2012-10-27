@@ -1,3 +1,7 @@
+#include <algorithm>
+
+#include "CommInterface.hpp"
+
 namespace Pareto {
 
 	void PrintVec( std::vector< double > &vec ){
@@ -100,6 +104,9 @@ namespace Pareto {
             //Establish finite difference parameters
             FiniteDifferences::Params_t FDpar = { 1e-6, FiniteDifferences::CENTRAL };
 
+            //Establish a mock communicator
+            Communication::MockCommunicator Comm( mesh.Points.size() );
+
 			//Construct optimizer
 			this->Opt = new OptNlopt(&Scal, tolerance, FDpar);
 
@@ -107,54 +114,33 @@ namespace Pareto {
 			int j;
 			for(j=0; j<Iterations; j++){
 
-				//for each point
+                //Status variables
+                std::vector< bool > flags(mesh.Points.size(), false);
+                Optimizer::EXIT_COND ec;
+
+                //Initial run of the optimizer for all the points
 				int i;
 				//for(i=j%2; i<NumPoints; i+=2){
 				for(i=0; i<mesh.Points.size(); i++){
-					if( !mesh.Points[i].Neighbors.empty() ){
-						
-						//NOTE: Pass only the required number of constraints to the 
-						//optimizer and then establish their neighbors.
-						int iter;
-						for(iter=0; iter<mesh.Points[i].Neighbors.size()/2; iter++) {
-							std::vector< double > *left = &mesh.Points[ mesh.Points[i].Neighbors[2*iter] ].ObjectiveCoords;
-							std::vector< double > *right = &mesh.Points[ mesh.Points[i].Neighbors[2*iter+1] ].ObjectiveCoords;
+					ec = RefinePoint(i, mesh, NeighborConstraints);
+                    if( ec != Optimizer::RERUN ) flags[i] = true;
+                }
 
-							NeighborConstraints[iter]->UpdateFrom( left, right );
-							Scal.EqualityConstraints.push_back( NeighborConstraints[iter]->function );
-						}
+                //Do we have everything?
+                bool alldone = ( std::find( flags.begin(), flags.end(), false ) == flags.end() );
 
-						this->Opt->RefreshConstraints();
+                //If not, run the poll loop
+                while( !alldone ){
 
-						//Get Design points
-						std::vector< double > x( mesh.Points[i].DesignCoords );
+                    //Run poll_loop() to get i
+                    i = Comm.PollLoop();
 
-						//Add the lambda values
-						int k;
-						for(k=0;k<mesh.Points[i].LambdaCoords.size()-1;k++) { 
-							x.push_back( mesh.Points[i].LambdaCoords[k] ); 
-						}
+                    //Run the update
+                    ec = RefinePoint(i, mesh, NeighborConstraints);
+                    if( ec != Optimizer::RERUN ) flags[i] = true;
 
-                        OptNlopt::EXIT_COND flag = OptNlopt::RERUN;
-                        while( flag == OptNlopt::RERUN ) flag = (OptNlopt::EXIT_COND)this->Opt->RunFrom( x );
-
-						if( flag == OptNlopt::SUCCESS ) {
-							//Update design points
-							mesh.Points[i].DesignCoords.assign( x.begin(), x.begin() + Prob->dimDesign);
-
-							//Update obj points
-							std::vector< double > f( GetF( Prob->Objectives, mesh.Points[i].DesignCoords ) );
-							mesh.Points[i].ObjectiveCoords.assign( f.begin(), f.end() );
-
-							//Update lam points
-							std::vector< double > l ( x.begin() + Prob->dimDesign, x.end() );
-							l.push_back( 1.0 - std::accumulate( l.begin(), l.end(), 0.0 ) );
-							mesh.Points[i].LambdaCoords.assign( l.begin(), l.end() );
-						}
-
-						//Pop the EQDist Constraints
-						Scal.EqualityConstraints.erase( Scal.EqualityConstraints.end() - iter, Scal.EqualityConstraints.end());
-					}
+                    //Again, do we have everything?
+				    alldone = ( std::find( flags.begin(), flags.end(), false ) == flags.end() );
 				}
 			}
 			delete this->Opt; 
@@ -162,5 +148,58 @@ namespace Pareto {
 			mesh.Print();			
 			mesh.WriteOut( "front.txt" );	
 		}
+
+        Optimizer::EXIT_COND RefinePoint( int i, Mesh::MeshBase &mesh, std::vector< FEqDistanceConstraint< typename Problem::FUNCTION >* > &NeighborConstraints ) {
+            if( !mesh.Points[i].Neighbors.empty() ){
+						
+				//NOTE: Pass only the required number of constraints to the 
+				//optimizer and then establish their neighbors.
+				int iter;
+				for(iter=0; iter<mesh.Points[i].Neighbors.size()/2; iter++) {
+					std::vector< double > *left = &mesh.Points[ mesh.Points[i].Neighbors[2*iter] ].ObjectiveCoords;
+					std::vector< double > *right = &mesh.Points[ mesh.Points[i].Neighbors[2*iter+1] ].ObjectiveCoords;
+
+					NeighborConstraints[iter]->UpdateFrom( left, right );
+					Scal.EqualityConstraints.push_back( NeighborConstraints[iter]->function );
+				}
+
+				this->Opt->RefreshConstraints();
+
+				//Get Design points
+				std::vector< double > x( mesh.Points[i].DesignCoords );
+
+				//Add the lambda values
+				int k;
+				for(k=0;k<mesh.Points[i].LambdaCoords.size()-1;k++) { 
+					x.push_back( mesh.Points[i].LambdaCoords[k] ); 
+				}
+
+                //OptNlopt::EXIT_COND flag = OptNlopt::RERUN;
+                //while( flag == OptNlopt::RERUN ) flag = (OptNlopt::EXIT_COND)this->Opt->RunFrom( x );
+                Optimizer::EXIT_COND flag = (Optimizer::EXIT_COND) this->Opt->RunFrom( x );
+
+				if( flag == OptNlopt::SUCCESS ) {
+					//Update design points
+					mesh.Points[i].DesignCoords.assign( x.begin(), x.begin() + Prob->dimDesign);
+
+					//Update obj points
+					std::vector< double > f( GetF( Prob->Objectives, mesh.Points[i].DesignCoords ) );
+					mesh.Points[i].ObjectiveCoords.assign( f.begin(), f.end() );
+
+					//Update lam points
+					std::vector< double > l ( x.begin() + Prob->dimDesign, x.end() );
+					l.push_back( 1.0 - std::accumulate( l.begin(), l.end(), 0.0 ) );
+					mesh.Points[i].LambdaCoords.assign( l.begin(), l.end() );
+				}
+
+				//Pop the EQDist Constraints
+				Scal.EqualityConstraints.erase( Scal.EqualityConstraints.end() - iter, Scal.EqualityConstraints.end());
+
+                return flag;
+			}
+
+            //Neighborless points always succeed
+            return Optimizer::SUCCESS;
+        }
 	};
 }

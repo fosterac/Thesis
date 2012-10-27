@@ -9,6 +9,7 @@ public:
 	//virtual double RunFrom(std::vector< double > &) = 0;
 	virtual int RunFrom(designVars_t &) = 0;
 	virtual void RefreshConstraints() = 0;
+    enum EXIT_COND { SUCCESS, RERUN, ERROR };
 };
 
 #include "boost/bind.hpp"
@@ -17,22 +18,25 @@ public:
 //Maintains validity state for groups of evaluations
 //Can be extended to interface with Comms?
 class EvaluationController {
+    typedef boost::function<double (const designVars_t &, bool &)> functionWithStatus_t;
+    functionWithStatus_t f;
     double evalAdapter( const designVars_t &x ) {
         bool tmp = false;
-        double result( (*this->S)( x, tmp ) );
+        double result( (this->f)( x, tmp ) );
         this->valid &= tmp;
         return result;
     }
-    ScalarizationInterface *S;
 public:
     bool valid;
     function_t objFunc;
-    EvaluationController ( ScalarizationInterface *s ) :  S(s), valid(false) {
-        function_t f ( boost::bind( &EvaluationController::evalAdapter, this, _1 ) );
-        this->objFunc = f;
+    EvaluationController ( functionWithStatus_t F ) :  f(F), valid(false) {
+        this->objFunc = ( boost::bind( &EvaluationController::evalAdapter, this, _1 ) );
     }
+    void Reset() { this->valid = true; }
+    bool isValid() { return this->valid; }
 };
 
+#include "Scalarization.hpp"
 #include "nlopt.hpp"
 #include "NloptAdapt.hpp"
 
@@ -52,10 +56,10 @@ private:
 	std::vector< double > InEqTolerances;
 
 public:
-    enum EXIT_COND { SUCCESS, RERUN, ERROR };
 
     OptNlopt(ScalarizationInterface *s, double tolerance, FiniteDifferences::Params_t fd_par) : 
-				    Optimizer(), S(s), E(s), 
+				    Optimizer(), S(s), 
+                    E( boost::bind( &ScalarizationInterface::operator(), S, _1, _2 ) ), 
                     NA(E.objFunc, &S->EqualityConstraints, &S->InequalityConstraints, E.valid, fd_par ), 
 				    opt(nlopt::LD_SLSQP, S->dimDesign), tolerance(tolerance), 
 				    EqTolerances(S->EqualityConstraints.size(), tolerance),
