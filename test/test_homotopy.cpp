@@ -32,6 +32,6 @@ namespace {
 		Pareto::Homotopy h( P, 1e-4 );
 
 		//Homotopically deform the ansatz
-		h.GetFront(9, 100);
+		h.GetFront(9, 10);
 	}
 }
