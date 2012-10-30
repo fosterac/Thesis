@@ -6,13 +6,15 @@
 namespace Homotopy {
     namespace Communication {
 
-        class MockCommunicator {
+        class SimpleMockCommunicator {
             int i;
             int size;
         public:
             MockCommunicator(int size) : i(0), size( size ) {}
             int PollLoop() { return (i++)%size; }
         };
+
+
         /*
         template< typename T >
         class Interface {
@@ -36,18 +38,18 @@ namespace Homotopy {
                     prePoll();
 
                     if( CommImpl_.HasMessage() ) {
-                            if( CommImpl_.ShouldStop() ) {
-                                CommImpl_.Shutdown();
-                                return;
-                            } 
-                            else {
-                                if( CommImpl_.HandleMessage() )
-                                    //Get message
-                                    CommImpl_.AsyncRecv();
-                                else
-                                    break;
-                            }
+                        if( CommImpl_.ShouldStop() ) {
+                            CommImpl_.Shutdown();
+                            return;
+                        } 
+                        else {
+                            if( CommImpl_.HandleMessage() )
+                                //Get message
+                                CommImpl_.AsyncRecv();
+                            else
+                                break;
                         }
+                    }
 
                     postPoll();
                 }

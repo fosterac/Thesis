@@ -113,6 +113,8 @@ namespace Pareto {
 			//Run a set of updates
 			int j;
 			for(j=0; j<Iterations; j++){
+                //Set of optimizers
+                std::vector< Optimizer* > opts( mesh.Points.size(), NULL ) ;
 
                 //Status variables
                 std::vector< bool > flags(mesh.Points.size(), false);
@@ -122,7 +124,9 @@ namespace Pareto {
 				int i;
 				//for(i=j%2; i<NumPoints; i+=2){
 				for(i=0; i<mesh.Points.size(); i++){
-					ec = RefinePoint(i, mesh, NeighborConstraints);
+                    opts[i] = new OptNlopt(&Scal, tolerance, FDpar);
+                    //ec = RefinePoint(i, this->Opt, mesh, NeighborConstraints);
+					ec = RefinePoint(i, opts[i], mesh, NeighborConstraints);
                     if( ec != Optimizer::RERUN ) flags[i] = true;
                 }
 
@@ -136,7 +140,8 @@ namespace Pareto {
                     i = Comm.PollLoop();
 
                     //Run the update
-                    ec = RefinePoint(i, mesh, NeighborConstraints);
+                    //ec = RefinePoint(i, this->Opt, mesh, NeighborConstraints);
+                    ec = RefinePoint(i, opts[i], mesh, NeighborConstraints);
                     if( ec != Optimizer::RERUN ) flags[i] = true;
 
                     //Again, do we have everything?
@@ -149,7 +154,7 @@ namespace Pareto {
 			mesh.WriteOut( "front.txt" );	
 		}
 
-        Optimizer::EXIT_COND RefinePoint( int i, Mesh::MeshBase &mesh, std::vector< FEqDistanceConstraint< typename Problem::FUNCTION >* > &NeighborConstraints ) {
+        Optimizer::EXIT_COND RefinePoint( int i, Optimizer * opt, Mesh::MeshBase &mesh, std::vector< FEqDistanceConstraint< typename Problem::FUNCTION >* > &NeighborConstraints ) {
             if( !mesh.Points[i].Neighbors.empty() ){
 						
 				//NOTE: Pass only the required number of constraints to the 
@@ -163,7 +168,8 @@ namespace Pareto {
 					Scal.EqualityConstraints.push_back( NeighborConstraints[iter]->function );
 				}
 
-				this->Opt->RefreshConstraints();
+				//this->Opt->RefreshConstraints();
+                opt->RefreshConstraints();
 
 				//Get Design points
 				std::vector< double > x( mesh.Points[i].DesignCoords );
@@ -176,7 +182,8 @@ namespace Pareto {
 
                 //OptNlopt::EXIT_COND flag = OptNlopt::RERUN;
                 //while( flag == OptNlopt::RERUN ) flag = (OptNlopt::EXIT_COND)this->Opt->RunFrom( x );
-                Optimizer::EXIT_COND flag = (Optimizer::EXIT_COND) this->Opt->RunFrom( x );
+                //Optimizer::EXIT_COND flag = (Optimizer::EXIT_COND) this->Opt->RunFrom( x );
+                Optimizer::EXIT_COND flag = (Optimizer::EXIT_COND) opt->RunFrom( x );
 
 				if( flag == OptNlopt::SUCCESS ) {
 					//Update design points

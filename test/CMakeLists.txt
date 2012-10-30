@@ -106,6 +106,15 @@ add_test(
     COMMAND testMarching
 )
 
+add_executable(testJobQueue
+    test_jobqueue.cpp
+)
+target_link_libraries(testJobQueue gtest gtest_main nlopt Problems )
+add_test(
+    NAME testJobQueue
+    COMMAND testJobQueue
+)
+
 add_executable(testHomotopy
     test_homotopy.cpp
 )
