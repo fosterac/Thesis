@@ -236,6 +236,16 @@ namespace Mesh {
 		}
 
 	//public:
+        std::set< int > GetNeighborIDs( int ID ){
+            //Get a vector of neighbors
+            std::vector< int > vec (getNeighbors( ind_to_coord( ID, this->MeshDim, this->PointsPerSide ), this->PointsPerSide ));
+            //Copy to a set
+            std::set< int > retval(vec.begin(), vec.end()); 
+            //std::vector< int >::iterator i;
+            //for(i=vec.begin(); i!=vec.end(); i++) retval.insert( *i );
+            return retval;
+        }
+
 		int PointsPerSide;
 
 		Simplex(	std::vector< std::vector< double > > DesignSpace,
