@@ -13,50 +13,7 @@
 #include <algorithm>
 
 namespace Homotopy {
-
-    template< typename T>
-    class SimulatedRemote {
-        struct req {
-            designVars_t x;
-            int id;
-        };
-        
-        const int EVALS_AT_ONCE;
-
-        T& P;
-        std::vector< req > requests;
-    public:
-        typedef T BaseType;
-        SimulatedRemote( T & p ) : P(p), EVALS_AT_ONCE( 17 ) {
-            srand ( unsigned ( time (NULL) ) );
-        }
-        void eval( designVars_t &x, int id ) {
-            req r = { x, id };
-            requests.push_back( r );
-        }
-        void poll(std::queue< std::pair< int, objVars_t> >& results ){
-            int evals = ( (requests.size() >= EVALS_AT_ONCE) ? (EVALS_AT_ONCE) : requests.size() );
-
-            std::vector< req > v( requests.begin(), requests.begin() + evals);
-            requests.erase( requests.begin(), requests.begin() + evals );
-
-            std::random_shuffle( v.begin(), v.end() );
-
-            typename std::vector< req >::iterator it;
-            for(it=v.begin(); it!=v.end(); it++){
-                
-                objVars_t r( this->P.size() );
-                int i;
-                for(i=0; i<this->P.size(); i++){
-                    r[i] = (this->P[i])( it->x );
-                }
-
-                std::pair< int, objVars_t > p( it->id, r );
-                results.push( p );
-            }
-        }
-    };
-
+    
     template< typename T>
     class JobQueue {
         T RemoteEvaluator;
@@ -74,8 +31,8 @@ namespace Homotopy {
         std::map< groupid_t, int > GroupCounts;
         std::map< groupid_t, int > GroupToInd;
             
-        void pushEvaluation(designVars_t &x, jobid_t j){
-            RemoteEvaluator.eval( x, j );
+        void pushEvaluation(const designVars_t &x, jobid_t j){
+            RemoteEvaluator.dispatch( x, j );
         }
 
         //Adjust the outstanding jobs
@@ -113,7 +70,7 @@ namespace Homotopy {
         }
 
         //Request an evaluation
-        objVars_t Request( designVars_t &x) {
+        objVars_t Request(const designVars_t &x) {
             //Have we requested this job yet?
             std::map< designVars_t, jobid_t >::iterator j = JobList.find( x );
             if( j != JobList.end() ){
@@ -161,6 +118,8 @@ namespace Homotopy {
         }
  
     public:
+        typedef JobQueue<T>& BaseType;
+
         JobQueue( typename T::BaseType& c ) : RemoteEvaluator( c ), job_id( 0 ), group_id( 1 ) {}
 
         void NewGroup(int ind){
@@ -169,13 +128,13 @@ namespace Homotopy {
             GroupCounts[ this->group_id ] = 0;
         }
 
-        objVars_t eval( designVars_t &x ){ return this->Request( x ); }
+        objVars_t eval(const designVars_t &x ){ return this->Request( x ); }
             
         int Poll() { 
             int nextInd = -1;
             while( nextInd < 0 ){
                 std::queue< std::pair< jobid_t, objVars_t> > results;
-                RemoteEvaluator.poll( results );
+                RemoteEvaluator.collect( results );
 
                 while( !results.empty() ){
                     std::pair< jobid_t, objVars_t> &p( results.front() );

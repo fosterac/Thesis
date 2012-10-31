@@ -1,7 +1,10 @@
 #ifndef HomotopyTypes_h
 #define HomotopyTypes_h
 
+//Standard includes
 #include <vector>
+
+//Boost includes
 #include "boost/bind.hpp"
 #include "boost/function.hpp"
 
@@ -13,8 +16,9 @@ namespace Homotopy {
     typedef std::vector< double > lamVars_t;
 
     //Function types
-    typedef boost::function<double (const std::vector<double> &)> function_t;
+    typedef boost::function<double (const designVars_t &)> function_t;
     typedef std::vector< function_t > functionSet_t;
+
 }
 
 #endif
