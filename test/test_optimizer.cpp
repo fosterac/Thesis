@@ -4,17 +4,11 @@
 
 #include <stdio.h>
 
-#include <vector>
-#include "boost/function.hpp"
-#include "boost/bind.hpp"
-
-#include "Problems.h"
-
 #include "HomotopyTypes.h"
+#include "Problems.h"
 
 #include "evaluator.hpp"
 #include "Scalarization.hpp"
-
 #include "optimizer.hpp"
 
 namespace {
@@ -30,7 +24,7 @@ TEST(OPTIMIZERTest, Alive) {
 	//Problem::Interface * P = Problem::Factory("CONST_TEST", 1, 2);
 
     //Scalarize the problem
-    FixedScalarization< Evaluator<EvaluationStrategy::Local< functionSet_t > > > S(P);
+    FixedScalarization< Evaluator<EvaluationStrategy::Local< functionSet_t > > > S(P, P->Objectives);
 
     //Establish parameters for finite differences
     FiniteDifferences::Params_t FDpar = { 1e-6, FiniteDifferences::CENTRAL };
