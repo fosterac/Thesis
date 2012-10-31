@@ -42,7 +42,7 @@
 
 
 #include <string>
-#include "Hypervolume.h"
+#include "hypervolume.h"
 
 #define MAXIMISING true
 

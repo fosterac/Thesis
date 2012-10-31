@@ -1,13 +1,13 @@
 //Simple test to verify Problem class functionality
 
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 #include <math.h>
 #include <cstdio>
 
-#include <nlopt.hpp>
+#include "nlopt.hpp"
 
-#include <boost/function.hpp>
+#include "boost/function.hpp"
 #include "Problems.h"
 
 //namespace {

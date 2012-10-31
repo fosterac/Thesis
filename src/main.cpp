@@ -7,11 +7,11 @@ Test program showing the general state of functionality
 #include <stdio.h>
 #include <vector>
 
-#include <boost/function.hpp>
+#include "boost/function.hpp"
 
 #include "Problems.h"
 #include "Scalarization.hpp"
-#include <nlopt.hpp>
+#include "nlopt.hpp"
 #include "NloptAdapt.hpp"
 
 #include "optimizer.h"
