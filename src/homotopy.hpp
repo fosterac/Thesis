@@ -25,6 +25,9 @@ namespace Pareto {
 		Problem::Interface *Prob;
         
         typedef JobQueue< Communication::SimulatedRemote< functionSet_t > > queue_t;
+
+        typedef Communication::AdHoc< typename Communication::CommImpl::Iface > comm_t;
+        //typedef JobQueue< comm_t > queue_t;
         queue_t Queue;
         
         //typedef Evaluator< EvaluationStrategy::Local< functionSet_t > > eval_t;
@@ -49,6 +52,7 @@ namespace Pareto {
 
 	public:
         Homotopy( Problem::Interface *P, double tolerance) : Prob(P), Queue( Prob->Objectives ), Scal( Prob, Queue ), tolerance(tolerance), 
+        //Homotopy( Problem::Interface *P, double tolerance) : Prob(P), Scal( Prob, Queue ), tolerance(tolerance), 
 			Opt( NULL ) {
 				
 				//Find the individual optimae using a fixed scalarization
@@ -83,6 +87,12 @@ namespace Pareto {
 				}
 				delete op;
 		}
+
+        //TODO: Hack-ish, but only for now
+        void SetDispatcherAndHandler( typename comm_t::dispatcher_t d, typename comm_t::handler_t h ){
+            //this->Queue.RemoteEvaluator.Dispatcher = d;
+            //this->Queue.RemoteEvaluator.Handler = h;
+        }
 
 		void GetFront(int NumPoints, int Iterations){
 			//Instantiate mesh

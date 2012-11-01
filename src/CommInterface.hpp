@@ -63,12 +63,17 @@ namespace Homotopy {
             }
         };
 
-        /*
-        class AdHocMPI : public Interface {
-            CommImpl::MPI comm_;
+        //To get this to compile on MPI-less machines
+        //typedef MPI_Status Status_t;
+        typedef int Status_t;
 
-            void HandleMessage( std::queue< std::pair< int, objVars_t> >& q ) {
-                return (this->Handler )( comm_.GetStatus(), comm_GetValue(), q );
+        template< typename T >
+        class AdHoc : public Interface {
+            //CommImpl::MPI comm_;
+            T comm_;
+
+            bool HandleMessage( std::queue< std::pair< int, objVars_t> >& q ) {
+                return (this->Handler )( comm_.GetStatus(), comm_.GetValue(), q );
             }
 
             void initialize() {
@@ -76,12 +81,14 @@ namespace Homotopy {
                 comm_.AsyncRecv();
             }
         public:
-            AdHocMPI() { 
+            typedef int BaseType;
+
+            AdHoc() { 
                 this->initialize();
             }
 
             typedef boost::function<void (size_t, const designVars_t &)> dispatcher_t;
-            typedef boost::function<bool (MPI_Status status, size_t length, std::queue< std::pair< int, objVars_t> >& q)> handler_t;
+            typedef boost::function<bool (Status_t status, size_t length, std::queue< std::pair< int, objVars_t> >& q)> handler_t;
 
             dispatcher_t Dispatcher;
             handler_t Handler;
@@ -119,14 +126,16 @@ namespace Homotopy {
             //Interface to implement
             class Iface {
             public:
-                virtual void Init() {} =0;
-                virtual void AsyncRecv() {} =0;
-                virtual bool HasMessage() {} =0;
-                //virtual bool HandleMessage() {} =0;
-                virtual bool ShouldStop() {} =0;
-                virtual void ShutDown() {} =0;
+                virtual void Init() {} 
+                virtual void AsyncRecv() {} 
+                virtual bool HasMessage() { return false;} 
+                virtual bool ShouldStop() { return false; } 
+                virtual void Shutdown() {} 
+                virtual Status_t GetStatus(){ return 0; }
+                virtual size_t GetValue(){ return 0; }
             };
 
+            /*
             class MPI : public Iface {
             private:
                 MPI_Status status;
@@ -162,8 +171,8 @@ namespace Homotopy {
                 MPI_Status GetStatus(){ return req; }
                 size_t GetValue(){ return recv_value; }
             };
+            */
         }
-        */
 
         /*
         template< typename T >

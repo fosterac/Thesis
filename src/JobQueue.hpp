@@ -16,7 +16,7 @@ namespace Homotopy {
     
     template< typename T>
     class JobQueue {
-        T RemoteEvaluator;
+        
 
         typedef int jobid_t;
         typedef int groupid_t;
@@ -118,9 +118,11 @@ namespace Homotopy {
         }
  
     public:
+        T RemoteEvaluator;
         typedef JobQueue<T>& BaseType;
 
         JobQueue( typename T::BaseType& c ) : RemoteEvaluator( c ), job_id( 0 ), group_id( 1 ) {}
+        JobQueue( ) : job_id( 0 ), group_id( 1 ) {}
 
         void NewGroup(int ind){
             this->group_id++;
