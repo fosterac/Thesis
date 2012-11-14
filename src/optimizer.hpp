@@ -2,9 +2,9 @@
 #define optimizer_hpp
 
 #include "HomotopyTypes.h"
-using namespace Homotopy;
+namespace Homotopy {
 
-class Optimizer {
+class optimizer {
 public:
 	//virtual double RunFrom(std::vector< double > &) = 0;
 	virtual int RunFrom(designVars_t &) = 0;
@@ -44,7 +44,7 @@ public:
 #include <stdio.h>
 
 //NloptBased optimizer
-class OptNlopt : public Optimizer {
+class OptNlopt : public optimizer {
 private:    
     ScalarizationInterface *S;
     EvaluationController E;
@@ -58,7 +58,7 @@ private:
 public:
 
     OptNlopt(ScalarizationInterface *s, double tolerance, FiniteDifferences::Params_t fd_par) : 
-				    Optimizer(), S(s), 
+				    optimizer(), S(s), 
                     E( boost::bind( &ScalarizationInterface::operator(), S, _1, _2 ) ), 
                     NA(E.objFunc, &S->EqualityConstraints, &S->InequalityConstraints, E.valid, fd_par ), 
 				    opt(nlopt::LD_SLSQP, S->dimDesign), tolerance(tolerance), 
@@ -131,5 +131,7 @@ public:
 	    //printf("Called right func\n");
     }
 };
+
+}
 
 #endif

@@ -31,7 +31,7 @@ protected:
 
 public:
 	enum SIGN { LESS_THAN = -1, GREATER_THAN = 1 };
-	BoundSumConstraint( SIGN s, double value, int from, int to ) : 
+	BoundSumConstraint( SIGN s, double value, int from, int to ) :
 	GeneralConstraint< T > (), sign(s), value(value), from(from), to(to) {}
 };
 
@@ -69,7 +69,7 @@ protected:
 	}
 	virtual double eval(const std::vector< double > &x){
 		this->Feval(x);
-		return L2Dist(*this->x1, this->f) - this->step ;
+		return this->L2Dist(*this->x1, this->f) - this->step ;
 	}
 public:
 	FStepConstraint( const std::vector< T > &F_trans, const std::vector< double >  * f1, double step) :
@@ -86,14 +86,14 @@ protected:
 		if( !(this->x1 && this->x2) ) return 0;
 
 		this->Feval(x);
-		return L2Dist(*this->x1, this->f) - L2Dist(*this->x2, this->f) ;
+		return this->L2Dist(*this->x1, this->f) - this->L2Dist(*this->x2, this->f) ;
 	}
 public:
 	FEqDistanceConstraint( const std::vector< T > &F_trans, const std::vector< double >  * f1, const std::vector< double >  * f2) :
 	  x2(f2), FStepConstraint< T >(F_trans, f1, 0.0) {}
-	void UpdateFrom( std::vector< double > * const f1, std::vector< double > * const f2) { 
-		this->x1 = f1; 
-		this->x2 = f2; 
+	void UpdateFrom( std::vector< double > * const f1, std::vector< double > * const f2) {
+		this->x1 = f1;
+		this->x2 = f2;
 	}
 };
 

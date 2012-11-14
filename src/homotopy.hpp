@@ -18,23 +18,26 @@
 #include "NloptAdapt.hpp"
 #include "optimizer.hpp"
 
+using namespace Homotopy;
+
 namespace Pareto {
 
-	class Homotopy {
+	class homotopy {
 	private:
 		Problem::Interface *Prob;
-        
-        typedef JobQueue< Communication::SimulatedRemote< functionSet_t > > queue_t;
+
+        //typedef JobQueue< Communication::SimulatedRemote< functionSet_t > > queue_t;
 
         typedef Communication::AdHoc< typename Communication::CommImpl::Iface > comm_t;
-        //typedef JobQueue< comm_t > queue_t;
+        //typedef Communication::AdHoc< typename Communication::CommImpl::MPI > comm_t;
+        typedef JobQueue< comm_t > queue_t;
         queue_t Queue;
-        
+
         //typedef Evaluator< EvaluationStrategy::Local< functionSet_t > > eval_t;
         typedef Evaluator< EvaluationStrategy::Cached< EvaluationStrategy::ReferenceTo < queue_t > > > eval_t;
-        
+
         DynamicScalarization< eval_t > Scal;
-		Optimizer * Opt;
+		optimizer * Opt;
 
 		double tolerance;
 
@@ -51,16 +54,17 @@ namespace Pareto {
 		}
 
 	public:
-        Homotopy( Problem::Interface *P, double tolerance) : Prob(P), Queue( Prob->Objectives ), Scal( Prob, Queue ), tolerance(tolerance), 
-        //Homotopy( Problem::Interface *P, double tolerance) : Prob(P), Scal( Prob, Queue ), tolerance(tolerance), 
+        //homotopy( Problem::Interface *P, double tolerance) : Prob(P), Queue( Prob->Objectives ), Scal( Prob, Queue ), tolerance(tolerance),
+        homotopy( Problem::Interface *P, double tolerance) : Prob(P), Scal( Prob, Queue ), tolerance(tolerance),
 			Opt( NULL ) {
-				
+
 				//Find the individual optimae using a fixed scalarization
-                FixedScalarization< eval_t > S(Prob, Queue);
+                //FixedScalarization< eval_t > S(Prob, Queue);
+                FixedScalarization< Evaluator< EvaluationStrategy::Local< functionSet_t > > > S(Prob, Prob->Objectives);
 
                 //Establish finite difference parameters
                 FiniteDifferences::Params_t FDpar = { 1e-6, FiniteDifferences::CENTRAL };
-				Optimizer * op = new OptNlopt( &S, 1e-4, FDpar);
+				optimizer * op = new OptNlopt( &S, 1e-4, FDpar);
 
 				int i;
 				for( i=0; i<Prob->Objectives.size(); i++){
@@ -70,11 +74,11 @@ namespace Pareto {
 					S.SetWeights( &lam );
 					std::vector<double> x(Prob->dimDesign, (double)(i+1) / (Prob->Objectives.size()+2));
 
-                    Queue.NewGroup( 0 );
+                    //Queue.NewGroup( 0 );
                     OptNlopt::EXIT_COND flag = (OptNlopt::EXIT_COND) op->RunFrom( x );
                     while( flag == OptNlopt::RERUN ) {
-                        Queue.Poll();
-                        Queue.NewGroup( 0 );
+                        //Queue.Poll();
+                        //Queue.NewGroup( 0 );
                         flag = (OptNlopt::EXIT_COND) op->RunFrom( x );
                     }
 
@@ -89,9 +93,13 @@ namespace Pareto {
 		}
 
         //TODO: Hack-ish, but only for now
+        void SetComm( MPI_Comm *c ){
+            this->Queue.RemoteEvaluator.comm_.comm_m = *c;
+            this->Queue.RemoteEvaluator.initialize();
+        }
         void SetDispatcherAndHandler( typename comm_t::dispatcher_t d, typename comm_t::handler_t h ){
-            //this->Queue.RemoteEvaluator.Dispatcher = d;
-            //this->Queue.RemoteEvaluator.Handler = h;
+            this->Queue.RemoteEvaluator.Dispatcher = d;
+            this->Queue.RemoteEvaluator.Handler = h;
         }
 
 		void GetFront(int NumPoints, int Iterations){
@@ -100,11 +108,11 @@ namespace Pareto {
 
 			/*
 			TODO: This point needs further investigation as starting from
-			the Obj Space guess location seems to be a winning prospect for 
-			quickly converging on convex fronts.  However, in the real FON 
+			the Obj Space guess location seems to be a winning prospect for
+			quickly converging on convex fronts.  However, in the real FON
 			example, leads to roundoff error for large #'s of points.
-			Starting, however, from the real locations of the interpolated 
-			Pareto Set (not front) allows much larger mesh sizes without 
+			Starting, however, from the real locations of the interpolated
+			Pareto Set (not front) allows much larger mesh sizes without
 			roundoff errors and contains points rooted in some kind of truth.
 			*/
 			//Project the design space mesh onto the objective space
@@ -138,11 +146,11 @@ namespace Pareto {
 			int j;
 			for(j=0; j<Iterations; j++){
                 //Set of optimizers
-                std::vector< Optimizer* > opts( mesh.Points.size(), NULL ) ;
+                std::vector< optimizer* > opts( mesh.Points.size(), NULL ) ;
 
                 //Status variables
                 std::vector< bool > flags(mesh.Points.size(), false);
-                Optimizer::EXIT_COND ec;
+                optimizer::EXIT_COND ec;
 
                 //Initial run of the optimizer for all the points
 				int i;
@@ -150,14 +158,14 @@ namespace Pareto {
 				for(i=0; i<mesh.Points.size(); i++){
                     //Define a local optimizer
                     opts[i] = new OptNlopt(&Scal, tolerance, FDpar);
-                    
+
                     //Specify a group of evaluations
                     Queue.NewGroup( i );
-                    
+
                     //Refine the point
                     //ec = RefinePoint(i, this->Opt, mesh, NeighborConstraints);
 					ec = RefinePoint(i, opts[i], mesh, NeighborConstraints);
-                    if( ec != Optimizer::RERUN ) flags[i] = true;
+                    if( ec != optimizer::RERUN ) flags[i] = true;
                 }
 
                 //Do we have everything?
@@ -165,7 +173,7 @@ namespace Pareto {
 
                 //If not, run the poll loop
                 while( !alldone ){
-                    
+
                     //Run poll_loop() to get i
                     //i = Comm.PollLoop();
                     i = Queue.Poll();
@@ -174,27 +182,27 @@ namespace Pareto {
                     //Run the update
                     //ec = RefinePoint(i, this->Opt, mesh, NeighborConstraints);
                     ec = RefinePoint(i, opts[i], mesh, NeighborConstraints);
-                    
-                    if( ec != Optimizer::RERUN ) flags[i] = true;
+
+                    if( ec != optimizer::RERUN ) flags[i] = true;
 
 
                     //Again, do we have everything?
 				    alldone = ( std::find( flags.begin(), flags.end(), false ) == flags.end() );
 				}
 
-                std::vector< Optimizer* >::iterator iter;
+                std::vector< optimizer* >::iterator iter;
                 for(iter=opts.begin(); iter!=opts.end(); iter++) delete *iter;
 			}
-			delete this->Opt; 
-			
-			mesh.Print();			
-			mesh.WriteOut( "front.txt" );	
+			delete this->Opt;
+
+			mesh.Print();
+			mesh.WriteOut( "front.txt" );
 		}
 
-        Optimizer::EXIT_COND RefinePoint( int i, Optimizer * opt, Mesh::MeshBase &mesh, std::vector< FEqDistanceConstraint< typename Problem::FUNCTION >* > &NeighborConstraints ) {
+        optimizer::EXIT_COND RefinePoint( int i, optimizer * opt, Mesh::MeshBase &mesh, std::vector< FEqDistanceConstraint< typename Problem::FUNCTION >* > &NeighborConstraints ) {
             if( !mesh.Points[i].Neighbors.empty() ){
-						
-				//NOTE: Pass only the required number of constraints to the 
+
+				//NOTE: Pass only the required number of constraints to the
 				//optimizer and then establish their neighbors.
 				int iter;
 				for(iter=0; iter<mesh.Points[i].Neighbors.size()/2; iter++) {
@@ -213,14 +221,14 @@ namespace Pareto {
 
 				//Add the lambda values
 				int k;
-				for(k=0;k<mesh.Points[i].LambdaCoords.size()-1;k++) { 
-					x.push_back( mesh.Points[i].LambdaCoords[k] ); 
+				for(k=0;k<mesh.Points[i].LambdaCoords.size()-1;k++) {
+					x.push_back( mesh.Points[i].LambdaCoords[k] );
 				}
 
                 //OptNlopt::EXIT_COND flag = OptNlopt::RERUN;
                 //while( flag == OptNlopt::RERUN ) flag = (OptNlopt::EXIT_COND)this->Opt->RunFrom( x );
-                //Optimizer::EXIT_COND flag = (Optimizer::EXIT_COND) this->Opt->RunFrom( x );
-                Optimizer::EXIT_COND flag = (Optimizer::EXIT_COND) opt->RunFrom( x );
+                //optimizer::EXIT_COND flag = (optimizer::EXIT_COND) this->Opt->RunFrom( x );
+                optimizer::EXIT_COND flag = (optimizer::EXIT_COND) opt->RunFrom( x );
 
 				if( flag == OptNlopt::SUCCESS ) {
 					//Update design points
@@ -243,7 +251,7 @@ namespace Pareto {
 			}
 
             //Neighborless points always succeed
-            return Optimizer::SUCCESS;
+            return optimizer::SUCCESS;
         }
 	};
 }
