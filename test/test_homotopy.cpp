@@ -3,21 +3,6 @@
 
 #include "gtest/gtest.h"
 
-#include <vector>
-#include "boost/function.hpp"
-
-#include "Problems.h"
-#include "evaluator.hpp"
-#include "Scalarization.hpp"
-using namespace Homotopy;
-#include "Constraint.hpp"
-#include "nlopt.hpp"
-#include "NloptAdapt.hpp"
-#include "optimizer.hpp"
-#include "mesh.hpp"
-
-#include <stdio.h>
-
 #include "homotopy.hpp"
 
 namespace {

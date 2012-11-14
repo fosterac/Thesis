@@ -16,6 +16,7 @@ namespace Homotopy {
     class Evaluator {
         T impl_;
     public:
+        typedef typename T::BaseType BaseType;
         Evaluator( typename T::BaseType p ) : impl_(p) {}
         objVars_t eval( const designVars_t &x ) {
             return this->impl_.eval( x );
@@ -44,6 +45,20 @@ namespace Homotopy {
                     results[i] = (this->P[i])( x );
                 }
                 return results;
+            }
+        };
+
+         //Simple local, sequential evaluation
+        template< typename T >
+        class ReferenceTo {
+        protected:
+            T& impl_;
+        public:
+            //Define the root type
+            typedef typename T::BaseType BaseType;
+            ReferenceTo ( typename T::BaseType p ) : impl_(p) {}
+            objVars_t eval( const designVars_t &x ) {
+                return this->impl_.eval( x );
             }
         };
 

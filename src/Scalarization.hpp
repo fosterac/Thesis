@@ -45,14 +45,9 @@ protected:
 	Problem::Interface * P;
 public:
     T e;
-    Scalarization(Problem::Interface * p) : ScalarizationInterface(p),
-                                            P(p), e(P->Objectives)
-    {
-        //int double (Scalarization<T>::*which_eval) (const std::vector<double>&) = &Scalarization<T>::eval;
-        //this->f = boost::bind( which_eval, this, _1);
-        //this->f = boost::bind( &Scalarization<T>::eval, this, _1, this->valid);
-        //this->f = boost::bind( &Scalarization<T>::eval, this, _1 );
-        
+    Scalarization(Problem::Interface * p, typename T::BaseType e) : ScalarizationInterface(p),
+                                            P(p), e(e)
+    {        
 		this->dimObj = 1;
 		this->dimDesign = P->dimDesign;
 	}
@@ -87,7 +82,7 @@ protected:
 	}
 
 public:
-	FixedScalarization(Problem::Interface * p) : Scalarization<T>(p), weights(NULL) {
+	FixedScalarization(Problem::Interface * p, typename T::BaseType e) : Scalarization<T>(p, e), weights(NULL) {
 		int i;
 		for(i=0; i<this->P->Objectives.size(); i++) { this->default_weights.push_back(1.0); }
 		this->weights = &(this->default_weights);
@@ -134,7 +129,7 @@ protected:
 	}
 
 public:
-	DynamicScalarization(Problem::Interface * p) : Scalarization<T>(p) {
+	DynamicScalarization(Problem::Interface * p, typename T::BaseType e) : Scalarization<T>(p, e) {
 		this->dimDesign = this->P->dimDesign + this->P->Objectives.size() - 1;
 
 		//Add constraints on the individual lambda values

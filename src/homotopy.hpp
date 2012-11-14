@@ -1,24 +1,40 @@
 #include <algorithm>
 
+#include "HomotopyTypes.h"
+
+//Problem API
+#include "Problems.h"
+
+//Include source files
+#include "evaluator.hpp"
+#include "Scalarization.hpp"
+#include "Constraint.hpp"
+#include "mesh.hpp"
 #include "CommInterface.hpp"
+#include "JobQueue.hpp"
+
+//Optimizer interface
+#include "nlopt.hpp"
+#include "NloptAdapt.hpp"
+#include "optimizer.hpp"
 
 namespace Pareto {
-
-	void PrintVec( std::vector< double > &vec ){
-		int i;
-		for(i=0;i<vec.size();i++){ 
-			printf("%lf ", vec[i] );
-		}
-		printf("\n");
-	}
 
 	class Homotopy {
 	private:
 		Problem::Interface *Prob;
-		//DynamicScalarization< typename Problem::FUNCTION > Scal;
-        DynamicScalarization< Evaluator< EvaluationStrategy::Cached< EvaluationStrategy::Local< functionSet_t > > > > Scal;
+        
+        typedef JobQueue< Communication::SimulatedRemote< functionSet_t > > queue_t;
+
+        typedef Communication::AdHoc< typename Communication::CommImpl::Iface > comm_t;
+        //typedef JobQueue< comm_t > queue_t;
+        queue_t Queue;
+        
+        //typedef Evaluator< EvaluationStrategy::Local< functionSet_t > > eval_t;
+        typedef Evaluator< EvaluationStrategy::Cached< EvaluationStrategy::ReferenceTo < queue_t > > > eval_t;
+        
+        DynamicScalarization< eval_t > Scal;
 		Optimizer * Opt;
-		//OptNlopt * Opt;
 
 		double tolerance;
 
@@ -35,12 +51,13 @@ namespace Pareto {
 		}
 
 	public:
-		Homotopy( Problem::Interface *P, double tolerance) : Prob(P), Scal( Prob ), tolerance(tolerance), 
-			//Opt( OptNlopt(Scal.f, &Scal, tolerance) ) {
+        Homotopy( Problem::Interface *P, double tolerance) : Prob(P), Queue( Prob->Objectives ), Scal( Prob, Queue ), tolerance(tolerance), 
+        //Homotopy( Problem::Interface *P, double tolerance) : Prob(P), Scal( Prob, Queue ), tolerance(tolerance), 
 			Opt( NULL ) {
 				
 				//Find the individual optimae using a fixed scalarization
-                FixedScalarization< Evaluator< EvaluationStrategy::Cached< EvaluationStrategy::Local< functionSet_t > > > > S(Prob);
+                FixedScalarization< eval_t > S(Prob, Queue);
+
                 //Establish finite difference parameters
                 FiniteDifferences::Params_t FDpar = { 1e-6, FiniteDifferences::CENTRAL };
 				Optimizer * op = new OptNlopt( &S, 1e-4, FDpar);
@@ -53,8 +70,13 @@ namespace Pareto {
 					S.SetWeights( &lam );
 					std::vector<double> x(Prob->dimDesign, (double)(i+1) / (Prob->Objectives.size()+2));
 
-                    OptNlopt::EXIT_COND flag = OptNlopt::RERUN;
-                    while( flag == OptNlopt::RERUN ) flag = (OptNlopt::EXIT_COND) op->RunFrom( x );
+                    Queue.NewGroup( 0 );
+                    OptNlopt::EXIT_COND flag = (OptNlopt::EXIT_COND) op->RunFrom( x );
+                    while( flag == OptNlopt::RERUN ) {
+                        Queue.Poll();
+                        Queue.NewGroup( 0 );
+                        flag = (OptNlopt::EXIT_COND) op->RunFrom( x );
+                    }
 
 					std::vector<double> f( GetF( Prob->Objectives, x) );
 
@@ -65,6 +87,12 @@ namespace Pareto {
 				}
 				delete op;
 		}
+
+        //TODO: Hack-ish, but only for now
+        void SetDispatcherAndHandler( typename comm_t::dispatcher_t d, typename comm_t::handler_t h ){
+            //this->Queue.RemoteEvaluator.Dispatcher = d;
+            //this->Queue.RemoteEvaluator.Handler = h;
+        }
 
 		void GetFront(int NumPoints, int Iterations){
 			//Instantiate mesh
@@ -98,17 +126,13 @@ namespace Pareto {
 			int n;
 			for(n=0;n<mesh.MeshDim;n++) {
 				NeighborConstraints[n] = new FEqDistanceConstraint< typename Problem::FUNCTION > (Prob->Objectives, NULL, NULL) ;
-				//Scal.EqualityConstraints.push_back( NeighborConstraints[n]->function );
 			}
 
             //Establish finite difference parameters
             FiniteDifferences::Params_t FDpar = { 1e-6, FiniteDifferences::CENTRAL };
 
-            //Establish a mock communicator
-            Communication::MockCommunicator Comm( mesh.Points.size() );
-
 			//Construct optimizer
-			this->Opt = new OptNlopt(&Scal, tolerance, FDpar);
+			//this->Opt = new OptNlopt(&Scal, tolerance, FDpar);
 
 			//Run a set of updates
 			int j;
@@ -124,7 +148,13 @@ namespace Pareto {
 				int i;
 				//for(i=j%2; i<NumPoints; i+=2){
 				for(i=0; i<mesh.Points.size(); i++){
+                    //Define a local optimizer
                     opts[i] = new OptNlopt(&Scal, tolerance, FDpar);
+                    
+                    //Specify a group of evaluations
+                    Queue.NewGroup( i );
+                    
+                    //Refine the point
                     //ec = RefinePoint(i, this->Opt, mesh, NeighborConstraints);
 					ec = RefinePoint(i, opts[i], mesh, NeighborConstraints);
                     if( ec != Optimizer::RERUN ) flags[i] = true;
@@ -135,18 +165,25 @@ namespace Pareto {
 
                 //If not, run the poll loop
                 while( !alldone ){
-
+                    
                     //Run poll_loop() to get i
-                    i = Comm.PollLoop();
+                    //i = Comm.PollLoop();
+                    i = Queue.Poll();
+                    Queue.NewGroup( i );
 
                     //Run the update
                     //ec = RefinePoint(i, this->Opt, mesh, NeighborConstraints);
                     ec = RefinePoint(i, opts[i], mesh, NeighborConstraints);
+                    
                     if( ec != Optimizer::RERUN ) flags[i] = true;
+
 
                     //Again, do we have everything?
 				    alldone = ( std::find( flags.begin(), flags.end(), false ) == flags.end() );
 				}
+
+                std::vector< Optimizer* >::iterator iter;
+                for(iter=opts.begin(); iter!=opts.end(); iter++) delete *iter;
 			}
 			delete this->Opt; 
 			

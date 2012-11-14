@@ -3,19 +3,7 @@
 
 #include "gtest/gtest.h"
 
-#include <vector>
-#include "boost/function.hpp"
-
-#include "Problems.h"
-#include "evaluator.hpp"
-#include "Scalarization.hpp"
-using namespace Homotopy;
-#include "Constraint.hpp"
-#include "nlopt.hpp"
-#include "NloptAdapt.hpp"
-#include "optimizer.hpp"
-
-#include <stdio.h>
+#include "homotopy.hpp"
 
 namespace {
 
@@ -69,7 +57,7 @@ namespace {
 		//Problem::Interface * P = Problem::Factory("WFG2", 2, 5);
 
         //Scalarize the problem
-        FixedScalarization< Evaluator<EvaluationStrategy::Local< functionSet_t > > > S(P);
+        FixedScalarization< Evaluator<EvaluationStrategy::Local< functionSet_t > > > S(P, P->Objectives);
         std::vector< double > w(2, 0.0); w[1] = 1.0;
         S.SetWeights(&w);
 
@@ -83,7 +71,7 @@ namespace {
 		PrintF(x1, P->Objectives);
         
         //Re-scalarize the problem
-        DynamicScalarization< Evaluator< EvaluationStrategy::Cached< EvaluationStrategy::Local< functionSet_t > > > > D(P);
+        DynamicScalarization< Evaluator< EvaluationStrategy::Cached< EvaluationStrategy::Local< functionSet_t > > > > D(P, P->Objectives);
 		
         //Establish auxilary stepping constraints
         //StepConstraint< typename Problem::FUNCTION > C(NULL, step);

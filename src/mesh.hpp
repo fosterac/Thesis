@@ -1,6 +1,9 @@
 #include <math.h>
 #include <numeric>
 #include <algorithm>
+#include <vector>
+#include <set>
+
 #include "boost/bind.hpp"
 #include "boost/function.hpp"
 

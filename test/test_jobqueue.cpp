@@ -86,7 +86,8 @@ namespace {
         Problem::Interface * P = Problem::Factory("FON", 2, 3);
 
         //Set up the evaluator framework
-        JobQueue< SimulatedRemote< functionSet_t > > E( P->Objectives );
+        SimulatedRemote< functionSet_t > Sim( P->Objectives );
+        JobQueue< SimulatedRemote< functionSet_t > > E( Sim );
 
         //How many evals to request
         int NUM=57;
