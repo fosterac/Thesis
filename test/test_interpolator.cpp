@@ -49,13 +49,19 @@ namespace {
         std::vector< double > point(2, 0.0);
         double sum = 0.0;
 
-        int N = 100;
+        int N = 200;
         
-        double hix = .00032;
+        /*double hix = .00032;
         double lox = .00026;
 
         double hiy = 40.0;
-        double loy = 15.0;
+        double loy = 15.0;*/
+        double hix = 1.0;
+        double lox = 0.0;
+
+        double hiy = 1.0;
+        double loy = 0.0;
+
 
         double xstep = (hix - lox)/(double)(N-1);
         double ystep = (hiy - loy)/(double)(N-1);

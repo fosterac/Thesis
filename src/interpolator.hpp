@@ -109,7 +109,8 @@ namespace Interpolation {
 
 				alglib::rbfcreate(this->dim, 1, this->model);
 				alglib::rbfsetpoints(this->model, vals);
-				alglib::rbfsetalgoqnn(this->model);
+				//alglib::rbfsetalgoqnn(this->model);
+                rbfsetalgomultilayer(this->model, 1.0, 5, 1.0e-2);
 				alglib::rbfbuildmodel(this->model, this->report);
 				assert( int(this->report.terminationtype) == 1 );
 			}
@@ -126,12 +127,12 @@ namespace Interpolation {
                 Rescale(x[0], this->mins[0], this->ranges[0] ), 
 				Rescale(x[1], this->mins[1], this->ranges[1] ) ), 
 				this->mins[2], this->ranges[2] ) ;*/
-                return alglib::rbfcalc2(this->model, 
-				Rescale(x[0], this->mins[0], this->ranges[0] ), 
-				Rescale(x[1], this->mins[1], this->ranges[1] ) );
                 /*return alglib::rbfcalc2(this->model, 
+				Rescale(x[0], this->mins[0], this->ranges[0] ), 
+				Rescale(x[1], this->mins[1], this->ranges[1] ) );*/
+                return alglib::rbfcalc2(this->model, 
 				x[0], 
-				x[1]);*/
+				x[1]);
 
 			if( this->dim == 3 ) 
 				return Unscale( alglib::rbfcalc3(this->model, 

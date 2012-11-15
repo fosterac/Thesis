@@ -26,8 +26,9 @@ namespace Pareto {
         
         typedef JobQueue< Communication::SimulatedRemote< functionSet_t > > queue_t;
 
-        typedef Communication::AdHoc< typename Communication::CommImpl::Iface > comm_t;
+        //typedef Communication::AdHoc< typename Communication::CommImpl::Iface > comm_t;
         //typedef JobQueue< comm_t > queue_t;
+
         queue_t Queue;
         
         //typedef Evaluator< EvaluationStrategy::Local< functionSet_t > > eval_t;
@@ -37,6 +38,8 @@ namespace Pareto {
 		Optimizer * Opt;
 
 		double tolerance;
+        static const double FDstep = 1e-7;
+        static const FiniteDifferences::FD_TYPE FDtype = FiniteDifferences::CENTRAL ;
 
 		//For holding the mesh corners
 		std::vector< std::vector< double > > Design;
@@ -59,8 +62,8 @@ namespace Pareto {
                 FixedScalarization< eval_t > S(Prob, Queue);
 
                 //Establish finite difference parameters
-                FiniteDifferences::Params_t FDpar = { 1e-6, FiniteDifferences::CENTRAL };
-				Optimizer * op = new OptNlopt( &S, 1e-4, FDpar);
+                FiniteDifferences::Params_t FDpar = { FDstep, FDtype };
+				Optimizer * op = new OptNlopt( &S, tolerance, FDpar);
 
 				int i;
 				for( i=0; i<Prob->Objectives.size(); i++){
@@ -68,7 +71,11 @@ namespace Pareto {
 					std::vector<double> lam(Prob->Objectives.size(), 0.0);
 					lam[i] = 1.0;
 					S.SetWeights( &lam );
-					std::vector<double> x(Prob->dimDesign, (double)(i+1) / (Prob->Objectives.size()+2));
+					std::vector<double> x(Prob->dimDesign, 0.0);
+                    int j;
+                    for(j=0; j<Prob->dimDesign; j++){
+                        x[j] = (Prob->upperBounds[j] - Prob->lowerBounds[j])/2.0 + Prob->lowerBounds[j];
+                    }
 
                     Queue.NewGroup( 0 );
                     OptNlopt::EXIT_COND flag = (OptNlopt::EXIT_COND) op->RunFrom( x );
@@ -89,10 +96,12 @@ namespace Pareto {
 		}
 
         //TODO: Hack-ish, but only for now
-        void SetDispatcherAndHandler( typename comm_t::dispatcher_t d, typename comm_t::handler_t h ){
+        //void SetDispatcherAndHandler( typename comm_t::dispatcher_t d, typename comm_t::handler_t h ){
             //this->Queue.RemoteEvaluator.Dispatcher = d;
             //this->Queue.RemoteEvaluator.Handler = h;
-        }
+        //}
+
+        typedef FEqDistanceConstraint< boost::function<objVars_t (const designVars_t&)> > FunctionSpaceEqDistConstr;
 
 		void GetFront(int NumPoints, int Iterations){
 			//Instantiate mesh
@@ -110,26 +119,29 @@ namespace Pareto {
 			//Project the design space mesh onto the objective space
 			int m;
 			for(m=0;m<mesh.Points.size();m++){
-				mesh.Points[ m ].ObjectiveCoords = GetF( Prob->Objectives, mesh.Points[ m ].DesignCoords ) ;
+				//mesh.Points[ m ].ObjectiveCoords = GetF( Prob->Objectives, mesh.Points[ m ].DesignCoords ) ;
 			}
 
 			//Constraints
 
 			//Sum constraints on the Lambda parameters
-			BoundSumConstraint< typename Problem::FUNCTION > LT( BoundSumConstraint< typename Problem::FUNCTION >::LESS_THAN, 1.0, Prob->dimDesign, Scal.dimDesign);
-			BoundSumConstraint< typename Problem::FUNCTION > GT( BoundSumConstraint< typename Problem::FUNCTION >::GREATER_THAN, 0.0, Prob->dimDesign, Scal.dimDesign);
+			BoundSumConstraint LT( BoundSumConstraint::LESS_THAN, 1.0, Prob->dimDesign, Scal.dimDesign);
+			BoundSumConstraint GT( BoundSumConstraint::GREATER_THAN, 0.0, Prob->dimDesign, Scal.dimDesign);
 			Scal.InequalityConstraints.push_back( LT.function );
 			Scal.InequalityConstraints.push_back( GT.function );
 
 			//Incorporate constraint
-			std::vector< FEqDistanceConstraint< typename Problem::FUNCTION >* > NeighborConstraints( mesh.MeshDim );
+            
+            bool placeholder = false;
+            boost::function<objVars_t (const designVars_t&)> f = boost::bind( &eval_t::eval, &(Scal.e), _1, placeholder);
+			std::vector< FunctionSpaceEqDistConstr* > NeighborConstraints( mesh.MeshDim );
 			int n;
 			for(n=0;n<mesh.MeshDim;n++) {
-				NeighborConstraints[n] = new FEqDistanceConstraint< typename Problem::FUNCTION > (Prob->Objectives, NULL, NULL) ;
-			}
+				NeighborConstraints[n] = new FunctionSpaceEqDistConstr (f, NULL, NULL) ;
+            }
 
             //Establish finite difference parameters
-            FiniteDifferences::Params_t FDpar = { 1e-6, FiniteDifferences::CENTRAL };
+            FiniteDifferences::Params_t FDpar = { FDstep, FDtype };
 
 			//Construct optimizer
 			//this->Opt = new OptNlopt(&Scal, tolerance, FDpar);
@@ -145,9 +157,11 @@ namespace Pareto {
                 Optimizer::EXIT_COND ec;
 
                 //Initial run of the optimizer for all the points
-				int i;
-				//for(i=j%2; i<NumPoints; i+=2){
-				for(i=0; i<mesh.Points.size(); i++){
+                int i;
+                int k;
+                for(k=0;k<2;k++){
+				for(i=k%2; i<NumPoints; i+=2){
+				//for(i=0; i<mesh.Points.size(); i++){
                     //Define a local optimizer
                     opts[i] = new OptNlopt(&Scal, tolerance, FDpar);
                     
@@ -159,6 +173,7 @@ namespace Pareto {
 					ec = RefinePoint(i, opts[i], mesh, NeighborConstraints);
                     if( ec != Optimizer::RERUN ) flags[i] = true;
                 }
+                
 
                 //Do we have everything?
                 bool alldone = ( std::find( flags.begin(), flags.end(), false ) == flags.end() );
@@ -179,8 +194,10 @@ namespace Pareto {
 
 
                     //Again, do we have everything?
-				    alldone = ( std::find( flags.begin(), flags.end(), false ) == flags.end() );
+				    //alldone = ( std::find( flags.begin(), flags.end(), false ) == flags.end() );
+                    alldone = ( std::count( flags.begin(), flags.end(), false ) <= NumPoints/2 );
 				}
+                }
 
                 std::vector< Optimizer* >::iterator iter;
                 for(iter=opts.begin(); iter!=opts.end(); iter++) delete *iter;
@@ -191,7 +208,7 @@ namespace Pareto {
 			mesh.WriteOut( "front.txt" );	
 		}
 
-        Optimizer::EXIT_COND RefinePoint( int i, Optimizer * opt, Mesh::MeshBase &mesh, std::vector< FEqDistanceConstraint< typename Problem::FUNCTION >* > &NeighborConstraints ) {
+        Optimizer::EXIT_COND RefinePoint( int i, Optimizer * opt, Mesh::MeshBase &mesh, std::vector< FunctionSpaceEqDistConstr * > &NeighborConstraints ) {
             if( !mesh.Points[i].Neighbors.empty() ){
 						
 				//NOTE: Pass only the required number of constraints to the 

@@ -239,15 +239,15 @@ public:
 		}
 
         //param 1 limits
-		this->lowerBounds.push_back( 0.00026 );
-		this->upperBounds.push_back( 0.00032 );
-        //this->lowerBounds.push_back( 0.0 );
-		//this->upperBounds.push_back( 1.0 );
+		//this->lowerBounds.push_back( 0.00026 );
+		//this->upperBounds.push_back( 0.00032 );
+        this->lowerBounds.push_back( 0.0 );
+		this->upperBounds.push_back( 1.0 );
         //param 2 limits
-        this->lowerBounds.push_back( 15.0 );
-		this->upperBounds.push_back( 40.0 );
-        //this->lowerBounds.push_back( 0.0 );
-		//this->upperBounds.push_back( 1.0 );
+        //this->lowerBounds.push_back( 15.0 );
+		//this->upperBounds.push_back( 40.0 );
+        this->lowerBounds.push_back( 0.0 );
+		this->upperBounds.push_back( 1.0 );
 	}
 };
 
