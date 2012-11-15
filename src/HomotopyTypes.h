@@ -18,7 +18,7 @@ namespace Homotopy {
     //Function types
     typedef boost::function<double (const designVars_t &)> function_t;
     typedef std::vector< function_t > functionSet_t;
-
+    
 }
 
 #endif

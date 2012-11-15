@@ -22,16 +22,16 @@ TEST(OPTIMIZERTest, Alive) {
 	//Problem::Interface * P = Problem::Factory("BASIN", 1, DesignVars);
 	//Problem::Interface * P = Problem::Factory("FON", 2, DesignVars);
 	//Problem::Interface * P = Problem::Factory("CONST_TEST", 1, 2);
-    Problem::Interface * P = Problem::Factory("SURROGATE", 3, 2);
+    Problem::Interface * P = Problem::Factory("SURROGATE", 2, 2);
 
     //Scalarize the problem
     FixedScalarization< Evaluator<EvaluationStrategy::Local< functionSet_t > > > S(P, P->Objectives);
 
     //Establish parameters for finite differences
-    FiniteDifferences::Params_t FDpar = { 1e-7, FiniteDifferences::CENTRAL };
+    FiniteDifferences::Params_t FDpar = { 1e-8, FiniteDifferences::CENTRAL };
 
     //Create optimizer
-	Optimizer * op = new OptNlopt(&S, 1e-6, FDpar);
+	Optimizer * op = new OptNlopt(&S, 1e-7, FDpar);
 	
 	printf("starting at: ");
 	std::vector<double> x(S.dimDesign);
