@@ -21,4 +21,55 @@ namespace {
 		printf("%lf\n", result);
 		EXPECT_NEAR( 2.5, double(result), 1e-3 );
 	}
+
+    TEST(InterpolatorTest, FromFile) {
+		std::vector< std::vector< double > > data = Interpolation::GetDataFromFile("./data/rms_x.dat") ;
+
+		Interpolation::RBF rbf(data);
+
+        std::vector< double > point(2, 0.0);
+        double sum = 0.0;
+
+        std::vector< std::vector< double > >::iterator it;
+        for(it=data.begin(); it != data.end(); it++) {
+            point[0] = (*it)[0]; point[1] = (*it)[1];
+            double result = rbf.evaluate( point ) - (*it)[2];
+		    sum += result*result;
+        }
+
+        //Total sum squared error
+        EXPECT_NEAR( 0.0, sum, 1e-3 );
+	}
+
+    TEST(InterpolatorTest, VerifyOutput) {
+		std::vector< std::vector< double > > data = Interpolation::GetDataFromFile("./data/rms_x.dat") ;
+
+		Interpolation::RBF rbf(data);
+
+        std::vector< double > point(2, 0.0);
+        double sum = 0.0;
+
+        int N = 100;
+        
+        double hix = .00032;
+        double lox = .00026;
+
+        double hiy = 40.0;
+        double loy = 15.0;
+
+        double xstep = (hix - lox)/(double)(N-1);
+        double ystep = (hiy - loy)/(double)(N-1);
+
+        double x=lox;
+        int i;
+        for(i=0; i<N; i++, x+=xstep) {
+            double y=loy;
+            int j;
+            for(j=0; j<N; j++,y+=ystep) {
+                point[0] = x; point[1] = y;
+                double result = rbf.evaluate( point );
+                std::cout << x << "\t" << y << "\t" << result << std::endl;
+            }
+        }
+	}
 }
