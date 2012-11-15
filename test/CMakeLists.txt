@@ -1,8 +1,13 @@
-include_directories(${CMAKE_SOURCE_DIR}/src)
-include_directories(${CMAKE_SOURCE_DIR}/dependencies)
-include_directories(${CMAKE_SOURCE_DIR}/dependencies/gtest-1.6.0/include)
-include_directories(${CMAKE_SOURCE_DIR}/dependencies/nlopt-2.3/api)
-include_directories(${CMAKE_SOURCE_DIR}/dependencies/alglib-3.6.0/cpp/src)
+#include_directories(${CMAKE_SOURCE_DIR}/src)
+#include_directories(${CMAKE_SOURCE_DIR}/dependencies)
+#include_directories(${CMAKE_SOURCE_DIR}/dependencies/gtest-1.6.0/include)
+#include_directories(${CMAKE_SOURCE_DIR}/dependencies/nlopt-2.3/api)
+#include_directories(${CMAKE_SOURCE_DIR}/dependencies/alglib-3.6.0/cpp/src)
+include_directories(../src)
+include_directories(../dependencies)
+include_directories(../dependencies/gtest-1.6.0/include)
+include_directories(../dependencies/nlopt-2.3/api)
+include_directories(../dependencies/alglib-3.6.0/cpp/src)
 
 enable_testing()
 
@@ -79,10 +84,19 @@ add_test(
     COMMAND testMesh
 )
 
+add_executable(testEvaluator
+    test_evaluator.cpp
+)
+target_link_libraries(testEvaluator gtest gtest_main Problems )
+add_test(
+    NAME testEvaluator
+    COMMAND testEvaluator
+)
+
 add_executable(testOptimizer
     test_optimizer.cpp
 )
-target_link_libraries(testOptimizer gtest gtest_main nlopt Problems Optimizer )
+target_link_libraries(testOptimizer gtest gtest_main nlopt Problems )
 add_test(
     NAME testOptimizer
     COMMAND testOptimizer
@@ -91,16 +105,25 @@ add_test(
 add_executable(testMarching
     test_marching.cpp
 )
-target_link_libraries(testMarching gtest gtest_main nlopt Problems Optimizer )
+target_link_libraries(testMarching gtest gtest_main nlopt Problems )
 add_test(
     NAME testMarching
     COMMAND testMarching
 )
 
+add_executable(testJobQueue
+    test_jobqueue.cpp
+)
+target_link_libraries(testJobQueue gtest gtest_main nlopt Problems )
+add_test(
+    NAME testJobQueue
+    COMMAND testJobQueue
+)
+
 add_executable(testHomotopy
     test_homotopy.cpp
 )
-target_link_libraries(testHomotopy gtest gtest_main nlopt Problems Optimizer )
+target_link_libraries(testHomotopy gtest gtest_main nlopt Problems )
 add_test(
     NAME testHomotopy
     COMMAND testHomotopy

@@ -1,6 +1,7 @@
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 #include <vector>
+#include <set>
 #include "mesh.hpp"
 #include <cstdlib>
 
@@ -92,6 +93,44 @@ namespace {
 			}
 		}
 	}
+
+    //Verify that the selected neighbors are antiparallel
+	TEST(SimplexTest, NeighborAccess){
+		int dim = 8;
+		int n = 8;
+
+		//Setup the corners
+		srand( 0 );
+		std::vector< std::vector < double > > D;
+		int i;
+		for(i = 0; i < dim; i++){
+			std::vector< double > v;
+			int j;
+			for(j = 0; j < dim; j++){ v.push_back( (double) (rand() % 1000) / 1000.0 ); }
+			D.push_back( v );
+		}
+
+		//Build a Mesh
+		Mesh::Simplex mesh( D, D, D, n);
+
+        //For each meshpoint
+		for(i=0; i<mesh.Points.size(); i++){
+            //Get the set
+            std::set< int > n ( mesh.GetNeighborIDs( i ) );
+            //Get the neighbors
+            std::vector< int > &vec (mesh.Points[i].Neighbors);
+
+            //Same size?
+            EXPECT_EQ( vec.size(), n.size() );
+
+            //Be sure that every element is present
+            std::vector< int >::iterator it;
+            for(it=vec.begin(); it!=vec.end(); it++) {
+                bool elem = ( n.find( *it ) != n.end() );
+                EXPECT_EQ( elem, true );
+            }
+        }
+    }
 
 	//Build a 1D mesh (line)
 	TEST(SimplexTest, 1D){

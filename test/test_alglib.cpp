@@ -1,6 +1,6 @@
 //Simple test to verify AlgLib functionality
 
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 #include <math.h>
 #include <cstdio>

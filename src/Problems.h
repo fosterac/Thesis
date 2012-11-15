@@ -1,3 +1,6 @@
+#ifndef Problems_h
+#define Problems_h
+
 namespace Problem{
 
 	//Use variant here...
@@ -20,3 +23,5 @@ namespace Problem{
 
 	Interface * Factory( std::string, int, int );
 }
+
+#endif

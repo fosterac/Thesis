@@ -1,12 +1,12 @@
 //Simple test to verify Nlopt functionality
 
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 #include <math.h>
 #include <cstdio>
 #include <vector>
 
-#include <nlopt.hpp>
+#include "nlopt.hpp"
 
 namespace {
 

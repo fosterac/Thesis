@@ -7,14 +7,11 @@ Test program showing the general state of functionality
 #include <stdio.h>
 #include <vector>
 
-#include <boost/function.hpp>
+#include "boost/function.hpp"
 
-#include "Problems.h"
-#include "Scalarization.hpp"
-#include <nlopt.hpp>
-#include "NloptAdapt.hpp"
+#include "homotopy.hpp"
 
-#include "optimizer.h"
+using namespace Homotopy;
 
 int main(int argc, char** argv){
 
@@ -24,10 +21,13 @@ int main(int argc, char** argv){
 	//Problem::Interface * P = Problem::Factory("WFG2", 2, DesignVars);
 	
 	//Scalarize the problem
-	FixedScalarization< typename Problem::FUNCTION > * S = new FixedScalarization< typename Problem::FUNCTION >(P);
+	FixedScalarization< Evaluator<EvaluationStrategy::Local< functionSet_t > > > * S = new FixedScalarization< Evaluator<EvaluationStrategy::Local< functionSet_t > > >(P, P->Objectives);
+
+    //Establish parameters for finite differences
+    FiniteDifferences::Params_t FDpar = { 1e-6, FiniteDifferences::CENTRAL };
 
 	//Instantiate an optimizer
-	Optimizer * op = new OptNlopt(S->f, S, 1e-4);
+	Optimizer * op = new OptNlopt(S, 1e-4, FDpar);
 
 	//Set up an initial point
 	std::vector<double> x(S->dimDesign);

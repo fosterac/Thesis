@@ -1,29 +1,48 @@
 #include <math.h>
 #include <numeric>
 #include <algorithm>
-#include <boost/bind.hpp>
-#include <boost/function.hpp>
+#include <vector>
+#include <set>
+
+#include "boost/bind.hpp"
+#include "boost/function.hpp"
+
+//for mesh writeout
+#include <string>
+#include <iostream>
+#include <fstream>
+#include <sstream>
 
 #include <cassert>
 #include <stdio.h>
 
 namespace Mesh {
 
-	struct Interface {
+	//Placeholder for a standard interface
+	struct Interface {	};
 
-	};
+	//Basic function for outputting vector to a stream
+	template< typename T>
+	std::ostream& operator<<(std::ostream& os, const std::vector<T>& vec){
+		os << "[ " ;
+		int i;
+		for(i=0;i<vec.size()-1;i++){ os << vec[i] << ", " ;	}
+		return os << vec[i] << " ]" ;
+	}
 
 	class MeshBase : public Interface {
 	public:
 		class MeshPoint {
 		public:
+			//The three basic pieces of each meshpoint
 			std::vector< double > DesignCoords;
 			std::vector< double > ObjectiveCoords;
-
-			//std::vector< MeshPoint* > Neighbors;
-			std::vector< int > Neighbors;
-
 			std::vector< double > LambdaCoords;
+
+			//Maintain neighbor references
+			//std::vector< MeshPoint* > Neighbors;
+			//By index in the global array
+			std::vector< int > Neighbors;
 
 			MeshPoint(	std::vector< double > &Design, 
 						std::vector< double > &Objective, 
@@ -31,6 +50,8 @@ namespace Mesh {
 						DesignCoords( Design ), 
 						ObjectiveCoords( Objective ), 
 						LambdaCoords( Lambdas ) { }
+
+			//Simple print function that dumps all values
 			void Print() {
 				int i;
 				printf("Design: ( ");
@@ -42,6 +63,11 @@ namespace Mesh {
 				printf(") Links: ( ");
 				for(i=0;i<Neighbors.size();i++)			printf("%d ", Neighbors[i]);
 				printf(")\n");
+			}
+
+			//For outputting a meshpoint to the front file
+			friend std::ostream& operator<<(std::ostream& os, const MeshPoint& mp){
+				return os << mp.ObjectiveCoords;
 			}
 		};
 
@@ -83,6 +109,25 @@ namespace Mesh {
 			for(i=0;i<Corners.size();i++) Corners[i].Print();
 			printf("Points: \n");
 			for(i=0;i<Points.size();i++) Points[i].Print();
+		}
+		void WriteOut(const char* filename) {
+			std::ofstream os( filename );
+			os << "{" << std::endl;
+
+			std::vector<std::string> cols;
+			int i;
+			for(i=0;i<this->ObjectiveDim;i++) {
+				std::stringstream s;
+				s << "\"" << i << "\"" ;
+				cols.push_back( std::string( s.str() ) );
+			}
+			os << "\"columns\" : " << cols << "," << std::endl;
+
+			os << "\"data\" : ";
+			os << this->Points;
+
+			os << "}" << std::endl;
+			os.close();
 		}
 	};
 
@@ -194,6 +239,16 @@ namespace Mesh {
 		}
 
 	//public:
+        std::set< int > GetNeighborIDs( int ID ){
+            //Get a vector of neighbors
+            std::vector< int > vec (getNeighbors( ind_to_coord( ID, this->MeshDim, this->PointsPerSide ), this->PointsPerSide ));
+            //Copy to a set
+            std::set< int > retval(vec.begin(), vec.end()); 
+            //std::vector< int >::iterator i;
+            //for(i=vec.begin(); i!=vec.end(); i++) retval.insert( *i );
+            return retval;
+        }
+
 		int PointsPerSide;
 
 		Simplex(	std::vector< std::vector< double > > DesignSpace,
