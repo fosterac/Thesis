@@ -38,7 +38,7 @@ namespace Pareto {
 		Optimizer * Opt;
 
 		double tolerance;
-        static const double FDstep = 1e-7;
+        static const double FDstep = 1e-6;
         static const FiniteDifferences::FD_TYPE FDtype = FiniteDifferences::CENTRAL ;
 
 		//For holding the mesh corners
@@ -131,9 +131,7 @@ namespace Pareto {
 			Scal.InequalityConstraints.push_back( GT.function );
 
 			//Incorporate constraint
-            
-            bool placeholder = false;
-            boost::function<objVars_t (const designVars_t&)> f = boost::bind( &eval_t::eval, &(Scal.e), _1, placeholder);
+            boost::function<objVars_t (const designVars_t&)> f = boost::bind( &eval_t::eval, &(Scal.e), _1);
 			std::vector< FunctionSpaceEqDistConstr* > NeighborConstraints( mesh.MeshDim );
 			int n;
 			for(n=0;n<mesh.MeshDim;n++) {
@@ -158,10 +156,7 @@ namespace Pareto {
 
                 //Initial run of the optimizer for all the points
                 int i;
-                int k;
-                for(k=0;k<2;k++){
-				for(i=k%2; i<NumPoints; i+=2){
-				//for(i=0; i<mesh.Points.size(); i++){
+				for(i=0; i<mesh.Points.size(); i++){
                     //Define a local optimizer
                     opts[i] = new OptNlopt(&Scal, tolerance, FDpar);
                     
@@ -194,10 +189,9 @@ namespace Pareto {
 
 
                     //Again, do we have everything?
-				    //alldone = ( std::find( flags.begin(), flags.end(), false ) == flags.end() );
-                    alldone = ( std::count( flags.begin(), flags.end(), false ) <= NumPoints/2 );
+				    alldone = ( std::find( flags.begin(), flags.end(), false ) == flags.end() );
 				}
-                }
+                //}
 
                 std::vector< Optimizer* >::iterator iter;
                 for(iter=opts.begin(); iter!=opts.end(); iter++) delete *iter;
