@@ -135,7 +135,7 @@ namespace Pareto {
 			std::vector< FunctionSpaceEqDistConstr* > NeighborConstraints( mesh.MeshDim );
 			int n;
 			for(n=0;n<mesh.MeshDim;n++) {
-				NeighborConstraints[n] = new FunctionSpaceEqDistConstr (f, NULL, NULL) ;
+				NeighborConstraints[n] = new FunctionSpaceEqDistConstr (f, this->Prob->dimDesign, NULL, NULL) ;
             }
 
             //Establish finite difference parameters

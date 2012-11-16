@@ -63,10 +63,11 @@ template< typename T >
 class FStepConstraint : public StepConstraint  {
 protected:
 	const T & F_trans;
+    const int designVars;
 	std::vector< double > f;
 	void Feval(const std::vector< double > &x){
         //Only evaluate a subset of the vector or else 
-        std::vector< double > vars( x.begin(), x.begin() + this->x1->size() );
+        std::vector< double > vars( x.begin(), x.begin() + this->designVars );
 		this->f = ( (F_trans)(vars) );
 	}
 	virtual double eval(const std::vector< double > &x){
@@ -74,8 +75,8 @@ protected:
 		return L2Dist(*this->x1, this->f) - this->step ;
 	}
 public:
-	FStepConstraint( const T &F_trans, const std::vector< double >  * f1, double step) :
-	  F_trans(F_trans), f(0), StepConstraint( f1, step) {}
+	FStepConstraint( const T &F_trans, int dV, const std::vector< double >  * f1, double step) :
+	  F_trans(F_trans), designVars(dV), f(0), StepConstraint( f1, step) {}
 };
 
 template< typename T >
@@ -91,8 +92,8 @@ protected:
 		return L2Dist(*this->x1, this->f) - L2Dist(*this->x2, this->f) ;
 	}
 public:
-	FEqDistanceConstraint( const T &F_trans, const std::vector< double >  * f1, const std::vector< double >  * f2) :
-	  x2(f2), FStepConstraint< T >(F_trans, f1, 0.0) {}
+	FEqDistanceConstraint( const T &F_trans, int dV, const std::vector< double >  * f1, const std::vector< double >  * f2) :
+	  x2(f2), FStepConstraint< T >(F_trans, dV, f1, 0.0) {}
 	void UpdateFrom( std::vector< double > * const f1, std::vector< double > * const f2) { 
 		this->x1 = f1; 
 		this->x2 = f2; 
