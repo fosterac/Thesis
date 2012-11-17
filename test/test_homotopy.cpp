@@ -9,10 +9,10 @@ namespace {
 
 	TEST(HOMOTOPY, 2D){
 		//Set up the problem
-		//Problem::Interface * P = Problem::Factory("FON", 2, 3);
+		Problem::Interface * P = Problem::Factory("FON", 2, 3);
 		//Problem::Interface * P = Problem::Factory("WFG5", 3, 30);
 		//Problem::Interface * P = Problem::Factory("DTLZ2", 3, 30);
-        Problem::Interface * P = Problem::Factory("SURROGATE", 2, 2);
+        //Problem::Interface * P = Problem::Factory("SURROGATE", 2, 2);
 
 		//Instantiate the homotopy
 		Pareto::homotopy h( P, 1e-3 );
