@@ -11,6 +11,7 @@
 //Switch for local/remote evaluation mechanisms
 #ifdef HAS_MPI
 #define REMOTE_EVAL
+#include <mpi.h>
 #else
 #define LOCAL_EVAL
 #endif
