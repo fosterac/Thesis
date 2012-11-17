@@ -231,7 +231,7 @@ public:
             //Load the required data
             std::vector< std::vector< double > > data = Interpolation::GetDataFromFile(s[i].c_str()) ;
             //Instatntiate the rbf
-            rbfs.push_back( Interpolation::RBF(data) );
+            rbfs.push_back( Interpolation::RBF(Interpolation::RBF::RESCALED, data) );
             //bind the function
 			typename Problem::FUNCTION f( boost::bind(&Surrogate::obj, this, _1, i) );
             //export to function list
