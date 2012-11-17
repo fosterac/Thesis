@@ -26,19 +26,10 @@ namespace Pareto {
 	private:
 		Problem::Interface *Prob;
 
-        //typedef JobQueue< Communication::SimulatedRemote< functionSet_t > > queue_t;
+        typedef Communication::Interface comm_t;
+        comm_t& Comm;
 
-        //Local evaluations are based on a simulated remote 
-#ifdef LOCAL_EVAL
-        typedef Communication::SimulatedRemote< functionSet_t > comm_t;
-#endif
-#ifdef REMOTE_EVAL
-#ifdef HAS_MPI
-        typedef Communication::AdHoc< typename Communication::CommImpl::MPI > comm_t;
-#endif
-#endif
-
-        //The rest of the evaluation chain is agnostic to the
+        //The evaluation chain is agnostic to the
         //local vs. remote evaluation strategy
         typedef JobQueue< comm_t > queue_t;
         queue_t Queue;
@@ -67,7 +58,7 @@ namespace Pareto {
 
 	public:
 #ifdef LOCAL_EVAL
-        homotopy( Problem::Interface *P, double tolerance) : Prob(P), Queue( Prob->Objectives ), Scal( Prob, Queue ), tolerance(tolerance), Opt( NULL )
+        homotopy( Problem::Interface *P, double tolerance, Communication::Interface & c) : Prob(P), Comm( c ), Queue( Comm ), Scal( Prob, Queue ), tolerance(tolerance), Opt( NULL )
 #endif
 #ifdef REMOTE_EVAL        
         homotopy( Problem::Interface *P, double tolerance) : Prob(P), Scal( Prob, Queue ), tolerance(tolerance),
