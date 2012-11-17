@@ -92,7 +92,10 @@ namespace Interpolation {
 		}
 
 	public:
-		RBF_AlgLib( Data& data ) : mins( FindMins( data ) ), ranges( FindRanges( data ) ) {
+        enum SCALE {UNSCALED, RESCALED};
+        SCALE scale;
+
+		RBF_AlgLib( SCALE s, Data& data ) : mins( FindMins( data ) ), ranges( FindRanges( data ) ), scale(s) {
 			try
 			{
 				//Assume one dependent variable
@@ -120,26 +123,42 @@ namespace Interpolation {
 			}			
 		}
 
-		double evaluate( const std::vector< double > &x){
+		double evaluate(const std::vector< double > &x){
 			assert( x.size() == this->dim );
 			if( this->dim == 2 ) 
-				/*return Unscale( alglib::rbfcalc2(this->model, 
-                Rescale(x[0], this->mins[0], this->ranges[0] ), 
-				Rescale(x[1], this->mins[1], this->ranges[1] ) ), 
-				this->mins[2], this->ranges[2] ) ;*/
-                /*return alglib::rbfcalc2(this->model, 
-				Rescale(x[0], this->mins[0], this->ranges[0] ), 
-				Rescale(x[1], this->mins[1], this->ranges[1] ) );*/
-                return alglib::rbfcalc2(this->model, 
-				x[0], 
-				x[1]);
+                switch( this->scale ) {
+                    case RESCALED:
+
+                    return alglib::rbfcalc2(this->model, 
+				    x[0], 
+				    x[1]);
+                    break;
+
+                    default: 
+
+                    return Unscale( alglib::rbfcalc2(this->model, 
+                    Rescale(x[0], this->mins[0], this->ranges[0] ), 
+				    Rescale(x[1], this->mins[1], this->ranges[1] ) ), 
+				    this->mins[2], this->ranges[2] ) ;
+            }
 
 			if( this->dim == 3 ) 
-				return Unscale( alglib::rbfcalc3(this->model, 
-				Rescale(x[0], this->mins[0], this->ranges[0] ), 
-				Rescale(x[1], this->mins[1], this->ranges[1] ),
-				Rescale(x[2], this->mins[2], this->ranges[2] ) ),
-				this->mins[3], this->ranges[3] ) ;
+                switch( this->scale ) {
+                    case RESCALED:
+                        return alglib::rbfcalc3(this->model, 
+				        x[0], 
+				        x[1],
+                        x[2]);
+                        break;
+
+                    default:
+				        return Unscale( alglib::rbfcalc3(this->model, 
+				        Rescale(x[0], this->mins[0], this->ranges[0] ), 
+				        Rescale(x[1], this->mins[1], this->ranges[1] ),
+				        Rescale(x[2], this->mins[2], this->ranges[2] ) ),
+				        this->mins[3], this->ranges[3] ) ;
+                
+                }
 		}
 	};
 

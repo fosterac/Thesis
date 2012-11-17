@@ -15,7 +15,7 @@ namespace {
 		v[0] = 1.0; v[1] = 0.0; v[2] = 3.0;
 		data.push_back( v );
 
-		Interpolation::RBF rbf(data);
+		Interpolation::RBF rbf(Interpolation::RBF::UNSCALED, data);
 		std::vector< double > point(2, 0.0);
 		double result = rbf.evaluate( point );
 		printf("%lf\n", result);
@@ -25,7 +25,7 @@ namespace {
     TEST(InterpolatorTest, FromFile) {
 		std::vector< std::vector< double > > data = Interpolation::GetDataFromFile("./data/rms_x.dat") ;
 
-		Interpolation::RBF rbf(data);
+		Interpolation::RBF rbf(Interpolation::RBF::UNSCALED, data);
 
         std::vector< double > point(2, 0.0);
         double sum = 0.0;
@@ -41,21 +41,16 @@ namespace {
         EXPECT_NEAR( 0.0, sum, 1e-3 );
 	}
 
-    TEST(InterpolatorTest, VerifyOutput) {
+    TEST(InterpolatorTest, DISABLED_VerifyOutput) {
 		std::vector< std::vector< double > > data = Interpolation::GetDataFromFile("./data/rms_x.dat") ;
 
-		Interpolation::RBF rbf(data);
+		Interpolation::RBF rbf(Interpolation::RBF::RESCALED, data);
 
         std::vector< double > point(2, 0.0);
         double sum = 0.0;
 
-        int N = 200;
-        
-        /*double hix = .00032;
-        double lox = .00026;
-
-        double hiy = 40.0;
-        double loy = 15.0;*/
+        int N = 10;
+       
         double hix = 1.0;
         double lox = 0.0;
 
