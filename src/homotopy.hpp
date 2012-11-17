@@ -28,8 +28,18 @@ namespace Pareto {
 
         //typedef JobQueue< Communication::SimulatedRemote< functionSet_t > > queue_t;
 
-        typedef Communication::AdHoc< typename Communication::CommImpl::Iface > comm_t;
-        //typedef Communication::AdHoc< typename Communication::CommImpl::MPI > comm_t;
+        //Local evaluations are based on a simulated remote 
+#ifdef LOCAL_EVAL
+        typedef Communication::SimulatedRemote< functionSet_t > comm_t;
+#endif
+#ifdef REMOTE_EVAL
+#ifdef HAS_MPI
+        typedef Communication::AdHoc< typename Communication::CommImpl::MPI > comm_t;
+#endif
+#endif
+
+        //The rest of the evaluation chain is agnostic to the
+        //local vs. remote evaluation strategy
         typedef JobQueue< comm_t > queue_t;
         queue_t Queue;
 
@@ -54,9 +64,14 @@ namespace Pareto {
 		}
 
 	public:
-        //homotopy( Problem::Interface *P, double tolerance) : Prob(P), Queue( Prob->Objectives ), Scal( Prob, Queue ), tolerance(tolerance),
+#ifdef LOCAL_EVAL
+        homotopy( Problem::Interface *P, double tolerance) : Prob(P), Queue( Prob->Objectives ), Scal( Prob, Queue ), tolerance(tolerance), Opt( NULL )
+#endif
+#ifdef REMOTE_EVAL        
         homotopy( Problem::Interface *P, double tolerance) : Prob(P), Scal( Prob, Queue ), tolerance(tolerance),
-			Opt( NULL ) {
+			Opt( NULL )
+#endif
+        {
 
 				//Find the individual optimae using a fixed scalarization
                 //FixedScalarization< eval_t > S(Prob, Queue);
@@ -93,6 +108,8 @@ namespace Pareto {
 		}
 
         //TODO: Hack-ish, but only for now
+#ifdef REMOTE_EVAL
+#ifdef HAS_MPI
         void SetComm( MPI_Comm *c ){
             this->Queue.RemoteEvaluator.comm_.comm_m = *c;
             this->Queue.RemoteEvaluator.initialize();
@@ -101,6 +118,8 @@ namespace Pareto {
             this->Queue.RemoteEvaluator.Dispatcher = d;
             this->Queue.RemoteEvaluator.Handler = h;
         }
+#endif
+#endif
 
 		void GetFront(int NumPoints, int Iterations){
 			//Instantiate mesh

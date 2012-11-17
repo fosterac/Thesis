@@ -14,7 +14,7 @@ namespace {
 		//Problem::Interface * P = Problem::Factory("DTLZ2", 3, 30);
 
 		//Instantiate the homotopy
-		Pareto::Homotopy h( P, 1e-4 );
+		Pareto::homotopy h( P, 1e-4 );
 
 		//Homotopically deform the ansatz
 		h.GetFront(9, 10);

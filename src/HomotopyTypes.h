@@ -8,6 +8,13 @@
 #include "boost/bind.hpp"
 #include "boost/function.hpp"
 
+//Switch for local/remote evaluation mechanisms
+#ifdef HAS_MPI
+#define REMOTE_EVAL
+#else
+#define LOCAL_EVAL
+#endif
+
 namespace Homotopy {
 
     //Point variables

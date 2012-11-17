@@ -1,26 +1,6 @@
 #ifndef CommInterface_hpp
 #define CommInterface_hpp
 
-/*
-//Do we have MPI available on the current system?
-#ifndef HAS_MPI
-//If not, fake it
-enum MPI_DATA_TYPE {MPI_LONG};
-typedef int MPI_Comm;
-enum MPI_TAG_TYPE {MPI_ANY_TAG, MPI_STOP_TAG};
-enum MPI_Request {MPI_REQUEST_NULL};
-enum MPI_SRC_TYPE {MPI_ANY_SOURCE};
-struct MPI_Status {
-    MPI_TAG_TYPE MPI_TAG;
-};
-void MPI_Irecv(int, int, MPI_DATA_TYPE, MPI_SRC_TYPE, MPI_TAG_TYPE, MPI_Comm, MPI_Request *) {}
-void MPT_TEST(MPI_Request *, int * , MPI_Status *) {}
-#endif
-#ifdef HAS_MPI
-#include <mpi.h>
-#endif
-*/
-
 #include "HomotopyTypes.h"
 
 #include <queue>
@@ -82,6 +62,72 @@ namespace Homotopy {
                 }
             }
         };
+
+        //Communication layer implementations
+        //that should allow writing simulated interfaces for testing
+        namespace CommImpl {
+            typedef int Status_t;
+            //Interface to implement
+            class Iface {
+            public:
+                virtual void Init() {}
+                virtual void AsyncRecv() {}
+                virtual bool HasMessage() { return false;}
+                virtual bool ShouldStop() { return false; }
+                virtual void Shutdown() {}
+                virtual Status_t GetStatus(){ return 0; }
+                virtual size_t GetValue(){ return 0; }
+            };
+
+//Only include this code if we have MPI
+#ifdef HAS_MPI
+            typedef MPI_Status Status_t;
+
+            class MPI : public Iface {
+            private:
+                MPI_Status status;
+                MPI_Request req;
+                size_t recv_value;
+                int flag;
+                bool is_running_;
+
+            public:
+                //oh god, why...
+                MPI_Comm comm_m;
+
+                MPI() : is_running_( false ), recv_value( 0 ), flag( 0 ) {}
+                void Init() {
+                    is_running_ = true;
+                }
+                void AsyncRecv() {
+                    MPI_Irecv(&recv_value, 1, MPI_LONG, MPI_ANY_SOURCE,
+                              MPI_ANY_TAG, comm_m, &req);
+                }
+                bool HasMessage() {
+                    if (req != MPI_REQUEST_NULL){
+                        MPI_Test(&req, &flag, &status);
+                        if(flag) return true;
+                    }
+                    return false;
+
+                }
+                bool ShouldStop() {
+                    return status.MPI_TAG == MPI_STOP_TAG;
+                }
+                void Shutdown() {
+
+                    is_running_ = false;
+                }
+
+                MPI_Status GetStatus(){ return status; }
+                size_t GetValue(){ return recv_value; }
+            };
+#else
+            //To get this to compile on MPI-less machines
+            //typedef int Status_t;
+            class MPI : public Iface {};
+#endif
+        }
 
         template< typename T >
         class AdHoc : public Interface {
@@ -157,75 +203,6 @@ namespace Homotopy {
                 //}
             }
         };
-
-
-        //Communication layer implementations
-        //that should allow writing simulated interfaces for testing
-        namespace CommImpl {
-            typedef int Status_t;
-            //Interface to implement
-            class Iface {
-            public:
-                virtual void Init() {}
-                virtual void AsyncRecv() {}
-                virtual bool HasMessage() { return false;}
-                virtual bool ShouldStop() { return false; }
-                virtual void Shutdown() {}
-                virtual Status_t GetStatus(){ return 0; }
-                virtual size_t GetValue(){ return 0; }
-            };
-
-//Only include this code if we have MPI
-#ifdef HAS_MPI
-            typedef MPI_Status Status_t;
-
-            class MPI : public Iface {
-            private:
-                MPI_Status status;
-                MPI_Request req;
-                size_t recv_value;
-                int flag;
-                bool is_running_;
-
-            public:
-                //oh god, why...
-                MPI_Comm comm_m;
-
-                MPI() : is_running_( false ), recv_value( 0 ), flag( 0 ) {}
-                void Init() {
-                    is_running_ = true;
-                }
-                void AsyncRecv() {
-                    MPI_Irecv(&recv_value, 1, MPI_LONG, MPI_ANY_SOURCE,
-                              MPI_ANY_TAG, comm_m, &req);
-                }
-                bool HasMessage() {
-                    if (req != MPI_REQUEST_NULL){
-                        MPI_Test(&req, &flag, &status);
-                        if(flag) return true;
-                    }
-                    return false;
-
-                }
-                bool ShouldStop() {
-                    return status.MPI_TAG == MPI_STOP_TAG;
-                }
-                void Shutdown() {
-
-                    is_running_ = false;
-                }
-
-                MPI_Status GetStatus(){ return status; }
-                size_t GetValue(){ return recv_value; }
-            };
-#else
-            //To get this to compile on MPI-less machines
-            //typedef int Status_t;
-            class MPI : public Iface {};
-#endif
-
-        }
-
     }
 }
 #endif
