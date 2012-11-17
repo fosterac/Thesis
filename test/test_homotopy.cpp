@@ -15,7 +15,7 @@ namespace {
         Problem::Interface * P = Problem::Factory("SURROGATE", 2, 2);
 
 		//Instantiate the homotopy
-		Pareto::Homotopy h( P, 1e-3 );
+		Pareto::homotopy h( P, 1e-3 );
 
 		//Homotopically deform the ansatz
 		h.GetFront(20, 1);

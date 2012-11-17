@@ -72,7 +72,7 @@ protected:
 	}
 	virtual double eval(const std::vector< double > &x){
 		this->Feval(x);
-		return L2Dist(*this->x1, this->f) - this->step ;
+		return this->L2Dist(*this->x1, this->f) - this->step ;
 	}
 public:
 	FStepConstraint( const T &F_trans, int dV, const std::vector< double >  * f1, double step) :
@@ -89,7 +89,7 @@ protected:
 		if( !(this->x1 && this->x2) ) return 0;
 
 		this->Feval(x);
-		return L2Dist(*this->x1, this->f) - L2Dist(*this->x2, this->f) ;
+		return this->L2Dist(*this->x1, this->f) - this->L2Dist(*this->x2, this->f) ;
 	}
 public:
 	FEqDistanceConstraint( const T &F_trans, int dV, const std::vector< double >  * f1, const std::vector< double >  * f2) :
