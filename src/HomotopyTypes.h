@@ -8,6 +8,14 @@
 #include "boost/bind.hpp"
 #include "boost/function.hpp"
 
+//Switch for local/remote evaluation mechanisms
+#ifdef HAS_MPI
+#define REMOTE_EVAL
+#include <mpi.h>
+#else
+#define LOCAL_EVAL
+#endif
+
 namespace Homotopy {
 
     //Point variables
@@ -18,7 +26,7 @@ namespace Homotopy {
     //Function types
     typedef boost::function<double (const designVars_t &)> function_t;
     typedef std::vector< function_t > functionSet_t;
-
+    
 }
 
 #endif

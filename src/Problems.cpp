@@ -209,6 +209,48 @@ public:
 	}
 };
 
+//Simulation/Surrogate-based problem
+#include "interpolator.hpp"
+
+class Surrogate : public Problem::Interface{
+private:
+    std::vector< Interpolation::RBF > rbfs;
+
+	double obj(const std::vector< double > &x, const int objNum){
+		return this->rbfs[objNum].evaluate( x );
+	}
+public:
+	Surrogate(int DimObj, int DimDesign) {
+		this->dimObj = DimObj;
+		this->dimDesign = DimDesign;
+
+        std::string s[] = {"./data/rms_s.dat", "./data/rms_x.dat", "./data/emit_x.dat"};
+
+		int i;
+		for(i=0; i<dimObj; i++){
+            //Load the required data
+            std::vector< std::vector< double > > data = Interpolation::GetDataFromFile(s[i].c_str()) ;
+            //Instatntiate the rbf
+            rbfs.push_back( Interpolation::RBF(Interpolation::RBF::RESCALED, data) );
+            //bind the function
+			typename Problem::FUNCTION f( boost::bind(&Surrogate::obj, this, _1, i) );
+            //export to function list
+			this->Objectives.push_back(	f );
+		}
+
+        //param 1 limits
+		//this->lowerBounds.push_back( 0.00026 );
+		//this->upperBounds.push_back( 0.00032 );
+        this->lowerBounds.push_back( 0.0 );
+		this->upperBounds.push_back( 1.0 );
+        //param 2 limits
+        //this->lowerBounds.push_back( 15.0 );
+		//this->upperBounds.push_back( 40.0 );
+        this->lowerBounds.push_back( 0.0 );
+		this->upperBounds.push_back( 1.0 );
+	}
+};
+
 Problem::Interface * Problem::Factory( std::string s, int DimObj, int DimDesign){
 	
 	Interface * toReturn = NULL;
@@ -245,6 +287,13 @@ Problem::Interface * Problem::Factory( std::string s, int DimObj, int DimDesign)
 		assert (DimObj == 3 || DimObj == 4);
 		assert (DimDesign >= 2);
 		toReturn = new DTLZ2(DimObj, DimDesign);
+	}
+
+    //Instantiate a Simulation Problem
+	if ( s.compare(std::string("SURROGATE")) == 0 ){
+		assert (DimObj <= 3);
+		assert (DimDesign == 2);
+		toReturn = new Surrogate(DimObj, DimDesign);
 	}
 
 	return toReturn;

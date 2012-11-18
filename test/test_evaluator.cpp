@@ -6,6 +6,7 @@
 #include "boost/function.hpp"
 
 #include "HomotopyTypes.h"
+#include "Problems.h"
 #include "evaluator.hpp"
 
 #include <stdio.h>

@@ -12,11 +12,12 @@ namespace {
 		Problem::Interface * P = Problem::Factory("FON", 2, 3);
 		//Problem::Interface * P = Problem::Factory("WFG5", 3, 30);
 		//Problem::Interface * P = Problem::Factory("DTLZ2", 3, 30);
+        //Problem::Interface * P = Problem::Factory("SURROGATE", 2, 2);
 
 		//Instantiate the homotopy
-		Pareto::Homotopy h( P, 1e-4 );
+		Pareto::homotopy h( P, 1e-3 );
 
 		//Homotopically deform the ansatz
-		h.GetFront(9, 10);
+		h.GetFront(20, 1);
 	}
 }

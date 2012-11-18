@@ -18,8 +18,8 @@ namespace Homotopy {
     class JobQueue {
         
 
-        typedef int jobid_t;
-        typedef int groupid_t;
+        typedef size_t jobid_t;
+        typedef size_t groupid_t;
 
         jobid_t job_id;
         groupid_t group_id;
@@ -133,6 +133,7 @@ namespace Homotopy {
         objVars_t eval(const designVars_t &x ){ return this->Request( x ); }
             
         int Poll() { 
+
             int nextInd = -1;
             while( nextInd < 0 ){
                 std::queue< std::pair< jobid_t, objVars_t> > results;

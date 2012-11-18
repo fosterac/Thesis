@@ -18,25 +18,40 @@
 #include "NloptAdapt.hpp"
 #include "optimizer.hpp"
 
+using namespace Homotopy;
+
 namespace Pareto {
 
-	class Homotopy {
+	class homotopy {
 	private:
 		Problem::Interface *Prob;
-        
-        typedef JobQueue< Communication::SimulatedRemote< functionSet_t > > queue_t;
 
-        typedef Communication::AdHoc< typename Communication::CommImpl::Iface > comm_t;
-        //typedef JobQueue< comm_t > queue_t;
+        //typedef JobQueue< Communication::SimulatedRemote< functionSet_t > > queue_t;
+
+        //Local evaluations are based on a simulated remote 
+#ifdef LOCAL_EVAL
+        typedef Communication::SimulatedRemote< functionSet_t > comm_t;
+#endif
+#ifdef REMOTE_EVAL
+#ifdef HAS_MPI
+        typedef Communication::AdHoc< typename Communication::CommImpl::MPI > comm_t;
+#endif
+#endif
+
+        //The rest of the evaluation chain is agnostic to the
+        //local vs. remote evaluation strategy
+        typedef JobQueue< comm_t > queue_t;
         queue_t Queue;
-        
+
         //typedef Evaluator< EvaluationStrategy::Local< functionSet_t > > eval_t;
         typedef Evaluator< EvaluationStrategy::Cached< EvaluationStrategy::ReferenceTo < queue_t > > > eval_t;
-        
+
         DynamicScalarization< eval_t > Scal;
-		Optimizer * Opt;
+		optimizer * Opt;
 
 		double tolerance;
+        static const double FDstep = 1e-6;
+        static const FiniteDifferences::FD_TYPE FDtype = FiniteDifferences::CENTRAL ;
 
 		//For holding the mesh corners
 		std::vector< std::vector< double > > Design;
@@ -51,16 +66,22 @@ namespace Pareto {
 		}
 
 	public:
-        Homotopy( Problem::Interface *P, double tolerance) : Prob(P), Queue( Prob->Objectives ), Scal( Prob, Queue ), tolerance(tolerance), 
-        //Homotopy( Problem::Interface *P, double tolerance) : Prob(P), Scal( Prob, Queue ), tolerance(tolerance), 
-			Opt( NULL ) {
-				
+#ifdef LOCAL_EVAL
+        homotopy( Problem::Interface *P, double tolerance) : Prob(P), Queue( Prob->Objectives ), Scal( Prob, Queue ), tolerance(tolerance), Opt( NULL )
+#endif
+#ifdef REMOTE_EVAL        
+        homotopy( Problem::Interface *P, double tolerance) : Prob(P), Scal( Prob, Queue ), tolerance(tolerance),
+			Opt( NULL )
+#endif
+        {
+
 				//Find the individual optimae using a fixed scalarization
-                FixedScalarization< eval_t > S(Prob, Queue);
+                //FixedScalarization< eval_t > S(Prob, Queue);
+                FixedScalarization< Evaluator< EvaluationStrategy::Local< functionSet_t > > > S(Prob, Prob->Objectives);
 
                 //Establish finite difference parameters
-                FiniteDifferences::Params_t FDpar = { 1e-6, FiniteDifferences::CENTRAL };
-				Optimizer * op = new OptNlopt( &S, 1e-4, FDpar);
+                FiniteDifferences::Params_t FDpar = { FDstep, FDtype };
+				optimizer * op = new OptNlopt( &S, tolerance, FDpar);
 
 				int i;
 				for( i=0; i<Prob->Objectives.size(); i++){
@@ -68,13 +89,17 @@ namespace Pareto {
 					std::vector<double> lam(Prob->Objectives.size(), 0.0);
 					lam[i] = 1.0;
 					S.SetWeights( &lam );
-					std::vector<double> x(Prob->dimDesign, (double)(i+1) / (Prob->Objectives.size()+2));
+					std::vector<double> x(Prob->dimDesign, 0.0);
+                    int j;
+                    for(j=0; j<Prob->dimDesign; j++){
+                        x[j] = (Prob->upperBounds[j] - Prob->lowerBounds[j])/2.0 + Prob->lowerBounds[j];
+                    }
 
-                    Queue.NewGroup( 0 );
+                    //Queue.NewGroup( 0 );
                     OptNlopt::EXIT_COND flag = (OptNlopt::EXIT_COND) op->RunFrom( x );
                     while( flag == OptNlopt::RERUN ) {
-                        Queue.Poll();
-                        Queue.NewGroup( 0 );
+                        //Queue.Poll();
+                        //Queue.NewGroup( 0 );
                         flag = (OptNlopt::EXIT_COND) op->RunFrom( x );
                     }
 
@@ -89,47 +114,58 @@ namespace Pareto {
 		}
 
         //TODO: Hack-ish, but only for now
-        void SetDispatcherAndHandler( typename comm_t::dispatcher_t d, typename comm_t::handler_t h ){
-            //this->Queue.RemoteEvaluator.Dispatcher = d;
-            //this->Queue.RemoteEvaluator.Handler = h;
-        }
 
+        
+#ifdef REMOTE_EVAL
+#ifdef HAS_MPI
+        void SetComm( MPI_Comm *c ){
+            this->Queue.RemoteEvaluator.comm_.comm_m = *c;
+            this->Queue.RemoteEvaluator.initialize();
+        }
+        void SetDispatcherAndHandler( typename comm_t::dispatcher_t d, typename comm_t::handler_t h ){
+            this->Queue.RemoteEvaluator.Dispatcher = d;
+            this->Queue.RemoteEvaluator.Handler = h;
+        }
+#endif
+#endif
+        typedef FEqDistanceConstraint< boost::function<objVars_t (const designVars_t&)> > FunctionSpaceEqDistConstr;
 		void GetFront(int NumPoints, int Iterations){
 			//Instantiate mesh
 			Mesh::Simplex mesh( this->Design, this->Objective, this->Lambda, NumPoints);
 
 			/*
 			TODO: This point needs further investigation as starting from
-			the Obj Space guess location seems to be a winning prospect for 
-			quickly converging on convex fronts.  However, in the real FON 
+			the Obj Space guess location seems to be a winning prospect for
+			quickly converging on convex fronts.  However, in the real FON
 			example, leads to roundoff error for large #'s of points.
-			Starting, however, from the real locations of the interpolated 
-			Pareto Set (not front) allows much larger mesh sizes without 
+			Starting, however, from the real locations of the interpolated
+			Pareto Set (not front) allows much larger mesh sizes without
 			roundoff errors and contains points rooted in some kind of truth.
 			*/
 			//Project the design space mesh onto the objective space
 			int m;
 			for(m=0;m<mesh.Points.size();m++){
-				mesh.Points[ m ].ObjectiveCoords = GetF( Prob->Objectives, mesh.Points[ m ].DesignCoords ) ;
+				//mesh.Points[ m ].ObjectiveCoords = GetF( Prob->Objectives, mesh.Points[ m ].DesignCoords ) ;
 			}
 
 			//Constraints
 
 			//Sum constraints on the Lambda parameters
-			BoundSumConstraint< typename Problem::FUNCTION > LT( BoundSumConstraint< typename Problem::FUNCTION >::LESS_THAN, 1.0, Prob->dimDesign, Scal.dimDesign);
-			BoundSumConstraint< typename Problem::FUNCTION > GT( BoundSumConstraint< typename Problem::FUNCTION >::GREATER_THAN, 0.0, Prob->dimDesign, Scal.dimDesign);
+			BoundSumConstraint LT( BoundSumConstraint::LESS_THAN, 1.0, Prob->dimDesign, Scal.dimDesign);
+			BoundSumConstraint GT( BoundSumConstraint::GREATER_THAN, 0.0, Prob->dimDesign, Scal.dimDesign);
 			Scal.InequalityConstraints.push_back( LT.function );
 			Scal.InequalityConstraints.push_back( GT.function );
 
 			//Incorporate constraint
-			std::vector< FEqDistanceConstraint< typename Problem::FUNCTION >* > NeighborConstraints( mesh.MeshDim );
+            boost::function<objVars_t (const designVars_t&)> f = boost::bind( &eval_t::eval, &(Scal.e), _1);
+			std::vector< FunctionSpaceEqDistConstr* > NeighborConstraints( mesh.MeshDim );
 			int n;
 			for(n=0;n<mesh.MeshDim;n++) {
-				NeighborConstraints[n] = new FEqDistanceConstraint< typename Problem::FUNCTION > (Prob->Objectives, NULL, NULL) ;
-			}
+				NeighborConstraints[n] = new FunctionSpaceEqDistConstr (f, this->Prob->dimDesign, NULL, NULL) ;
+            }
 
             //Establish finite difference parameters
-            FiniteDifferences::Params_t FDpar = { 1e-6, FiniteDifferences::CENTRAL };
+            FiniteDifferences::Params_t FDpar = { FDstep, FDtype };
 
 			//Construct optimizer
 			//this->Opt = new OptNlopt(&Scal, tolerance, FDpar);
@@ -138,34 +174,34 @@ namespace Pareto {
 			int j;
 			for(j=0; j<Iterations; j++){
                 //Set of optimizers
-                std::vector< Optimizer* > opts( mesh.Points.size(), NULL ) ;
+                std::vector< optimizer* > opts( mesh.Points.size(), NULL ) ;
 
                 //Status variables
                 std::vector< bool > flags(mesh.Points.size(), false);
-                Optimizer::EXIT_COND ec;
+                optimizer::EXIT_COND ec;
 
                 //Initial run of the optimizer for all the points
-				int i;
-				//for(i=j%2; i<NumPoints; i+=2){
+                int i;
 				for(i=0; i<mesh.Points.size(); i++){
                     //Define a local optimizer
                     opts[i] = new OptNlopt(&Scal, tolerance, FDpar);
-                    
+
                     //Specify a group of evaluations
                     Queue.NewGroup( i );
-                    
+
                     //Refine the point
                     //ec = RefinePoint(i, this->Opt, mesh, NeighborConstraints);
 					ec = RefinePoint(i, opts[i], mesh, NeighborConstraints);
-                    if( ec != Optimizer::RERUN ) flags[i] = true;
+                    if( ec != optimizer::RERUN ) flags[i] = true;
                 }
+                
 
                 //Do we have everything?
                 bool alldone = ( std::find( flags.begin(), flags.end(), false ) == flags.end() );
 
                 //If not, run the poll loop
                 while( !alldone ){
-                    
+
                     //Run poll_loop() to get i
                     //i = Comm.PollLoop();
                     i = Queue.Poll();
@@ -174,27 +210,28 @@ namespace Pareto {
                     //Run the update
                     //ec = RefinePoint(i, this->Opt, mesh, NeighborConstraints);
                     ec = RefinePoint(i, opts[i], mesh, NeighborConstraints);
-                    
-                    if( ec != Optimizer::RERUN ) flags[i] = true;
+
+                    if( ec != optimizer::RERUN ) flags[i] = true;
 
 
                     //Again, do we have everything?
 				    alldone = ( std::find( flags.begin(), flags.end(), false ) == flags.end() );
 				}
+                //}
 
-                std::vector< Optimizer* >::iterator iter;
+                std::vector< optimizer* >::iterator iter;
                 for(iter=opts.begin(); iter!=opts.end(); iter++) delete *iter;
 			}
-			delete this->Opt; 
-			
-			mesh.Print();			
-			mesh.WriteOut( "front.txt" );	
+			delete this->Opt;
+
+			mesh.Print();
+			mesh.WriteOut( "front.txt" );
 		}
 
-        Optimizer::EXIT_COND RefinePoint( int i, Optimizer * opt, Mesh::MeshBase &mesh, std::vector< FEqDistanceConstraint< typename Problem::FUNCTION >* > &NeighborConstraints ) {
+        optimizer::EXIT_COND RefinePoint( int i, optimizer * opt, Mesh::MeshBase &mesh, std::vector< FunctionSpaceEqDistConstr * > &NeighborConstraints ) {
             if( !mesh.Points[i].Neighbors.empty() ){
-						
-				//NOTE: Pass only the required number of constraints to the 
+
+				//NOTE: Pass only the required number of constraints to the
 				//optimizer and then establish their neighbors.
 				int iter;
 				for(iter=0; iter<mesh.Points[i].Neighbors.size()/2; iter++) {
@@ -213,14 +250,14 @@ namespace Pareto {
 
 				//Add the lambda values
 				int k;
-				for(k=0;k<mesh.Points[i].LambdaCoords.size()-1;k++) { 
-					x.push_back( mesh.Points[i].LambdaCoords[k] ); 
+				for(k=0;k<mesh.Points[i].LambdaCoords.size()-1;k++) {
+					x.push_back( mesh.Points[i].LambdaCoords[k] );
 				}
 
                 //OptNlopt::EXIT_COND flag = OptNlopt::RERUN;
                 //while( flag == OptNlopt::RERUN ) flag = (OptNlopt::EXIT_COND)this->Opt->RunFrom( x );
-                //Optimizer::EXIT_COND flag = (Optimizer::EXIT_COND) this->Opt->RunFrom( x );
-                Optimizer::EXIT_COND flag = (Optimizer::EXIT_COND) opt->RunFrom( x );
+                //optimizer::EXIT_COND flag = (optimizer::EXIT_COND) this->Opt->RunFrom( x );
+                optimizer::EXIT_COND flag = (optimizer::EXIT_COND) opt->RunFrom( x );
 
 				if( flag == OptNlopt::SUCCESS ) {
 					//Update design points
@@ -243,7 +280,7 @@ namespace Pareto {
 			}
 
             //Neighborless points always succeed
-            return Optimizer::SUCCESS;
+            return optimizer::SUCCESS;
         }
 	};
 }

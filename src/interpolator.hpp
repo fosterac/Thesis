@@ -1,3 +1,6 @@
+#ifndef interpolator_hpp
+#define interpolator_hpp
+
 #include "stdafx.h"
 #include "interpolation.h"
 
@@ -5,6 +8,10 @@
 #include <algorithm>
 #include <stdio.h>
 
+#include <stdexcept>
+#include <iostream>
+#include <fstream>
+#include <string>
 
 namespace Interpolation {
 	class Interpolator { };
@@ -85,7 +92,10 @@ namespace Interpolation {
 		}
 
 	public:
-		RBF_AlgLib( Data& data ) : mins( FindMins( data ) ), ranges( FindRanges( data ) ) {
+        enum SCALE {UNSCALED, RESCALED};
+        SCALE scale;
+
+		RBF_AlgLib( SCALE s, Data& data ) : mins( FindMins( data ) ), ranges( FindRanges( data ) ), scale(s) {
 			try
 			{
 				//Assume one dependent variable
@@ -102,7 +112,8 @@ namespace Interpolation {
 
 				alglib::rbfcreate(this->dim, 1, this->model);
 				alglib::rbfsetpoints(this->model, vals);
-				alglib::rbfsetalgoqnn(this->model);
+				//alglib::rbfsetalgoqnn(this->model);
+                rbfsetalgomultilayer(this->model, 1.0, 5, 1.0e-2);
 				alglib::rbfbuildmodel(this->model, this->report);
 				assert( int(this->report.terminationtype) == 1 );
 			}
@@ -112,22 +123,73 @@ namespace Interpolation {
 			}			
 		}
 
-		double evaluate( const std::vector< double > &x){
+		double evaluate(const std::vector< double > &x){
 			assert( x.size() == this->dim );
 			if( this->dim == 2 ) 
-				return Unscale( alglib::rbfcalc2(this->model, 
-				Rescale(x[0], this->mins[0], this->ranges[0] ), 
-				Rescale(x[1], this->mins[1], this->ranges[1] ) ), 
-				this->mins[2], this->ranges[2] ) ;
+                switch( this->scale ) {
+                    case RESCALED:
+
+                    return alglib::rbfcalc2(this->model, 
+				    x[0], 
+				    x[1]);
+                    break;
+
+                    default: 
+
+                    return Unscale( alglib::rbfcalc2(this->model, 
+                    Rescale(x[0], this->mins[0], this->ranges[0] ), 
+				    Rescale(x[1], this->mins[1], this->ranges[1] ) ), 
+				    this->mins[2], this->ranges[2] ) ;
+            }
 
 			if( this->dim == 3 ) 
-				return Unscale( alglib::rbfcalc3(this->model, 
-				Rescale(x[0], this->mins[0], this->ranges[0] ), 
-				Rescale(x[1], this->mins[1], this->ranges[1] ),
-				Rescale(x[2], this->mins[2], this->ranges[2] ) ),
-				this->mins[3], this->ranges[3] ) ;
+                switch( this->scale ) {
+                    case RESCALED:
+                        return alglib::rbfcalc3(this->model, 
+				        x[0], 
+				        x[1],
+                        x[2]);
+                        break;
+
+                    default:
+				        return Unscale( alglib::rbfcalc3(this->model, 
+				        Rescale(x[0], this->mins[0], this->ranges[0] ), 
+				        Rescale(x[1], this->mins[1], this->ranges[1] ),
+				        Rescale(x[2], this->mins[2], this->ranges[2] ) ),
+				        this->mins[3], this->ranges[3] ) ;
+                
+                }
 		}
 	};
 
 	typedef RBF_AlgLib RBF;
+
+    Data GetDataFromFile(const char* filename){
+        Data ret;
+        std::string line;
+        std::ifstream myfile (filename);
+        
+        if (myfile.is_open())
+        {
+            while ( myfile.good() )
+            {
+                std::getline (myfile,line);
+
+                std::vector< double > v;
+                double x, y, z;
+
+                sscanf( line.c_str(), "%lf %lf %lf", &x, &y, &z );
+
+                v.push_back(x); v.push_back(y); v.push_back(z);
+                ret.push_back(v);
+            }
+            myfile.close();
+        }
+
+        else throw std::runtime_error("Unable to open data file!");
+
+        return ret;
+    }
 }
+
+#endif
