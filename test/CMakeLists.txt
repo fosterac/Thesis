@@ -1,8 +1,3 @@
-#include_directories(${CMAKE_SOURCE_DIR}/src)
-#include_directories(${CMAKE_SOURCE_DIR}/dependencies)
-#include_directories(${CMAKE_SOURCE_DIR}/dependencies/gtest-1.6.0/include)
-#include_directories(${CMAKE_SOURCE_DIR}/dependencies/nlopt-2.3/api)
-#include_directories(${CMAKE_SOURCE_DIR}/dependencies/alglib-3.6.0/cpp/src)
 include_directories(../src)
 include_directories(../dependencies)
 include_directories(../dependencies/gtest-1.6.0/include)

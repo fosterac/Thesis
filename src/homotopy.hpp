@@ -57,14 +57,7 @@ namespace Pareto {
 		}
 
 	public:
-#ifdef LOCAL_EVAL
-        homotopy( Problem::Interface *P, double tolerance, Communication::Interface & c) : Prob(P), Comm( c ), Queue( Comm ), Scal( Prob, Queue ), tolerance(tolerance), Opt( NULL )
-#endif
-#ifdef REMOTE_EVAL        
-        homotopy( Problem::Interface *P, double tolerance) : Prob(P), Scal( Prob, Queue ), tolerance(tolerance),
-			Opt( NULL )
-#endif
-        {
+        homotopy( Problem::Interface *P, double tolerance, Communication::Interface & c) : Prob(P), Comm( c ), Queue( Comm ), Scal( Prob, Queue ), tolerance(tolerance), Opt( NULL ){
 
 				//Find the individual optimae using a fixed scalarization
                 FixedScalarization< eval_t > S(Prob, Queue);
@@ -112,21 +105,6 @@ namespace Pareto {
 				}
 		}
 
-        //TODO: Hack-ish, but only for now
-
-        
-#ifdef REMOTE_EVAL
-#ifdef HAS_MPI
-        void SetComm( MPI_Comm *c ){
-            this->Queue.RemoteEvaluator.comm_.comm_m = *c;
-            this->Queue.RemoteEvaluator.initialize();
-        }
-        void SetDispatcherAndHandler( typename comm_t::dispatcher_t d, typename comm_t::handler_t h ){
-            this->Queue.RemoteEvaluator.Dispatcher = d;
-            this->Queue.RemoteEvaluator.Handler = h;
-        }
-#endif
-#endif
         typedef FEqDistanceConstraint< boost::function<objVars_t (const designVars_t&)> > FunctionSpaceEqDistConstr;
 		void GetFront(int NumPoints, int Iterations){
 			//Instantiate mesh
