@@ -73,9 +73,10 @@ public:
 	
 	    //Set the stop conditions
 	    //this requires some attention
-	    opt.set_xtol_rel(tolerance);
+        opt.set_xtol_abs(tolerance);
+        opt.set_ftol_abs(tolerance);
+	    //opt.set_xtol_rel(tolerance);
 	    //opt.set_ftol_rel(tolerance);
-        //opt.set_ftol_abs(tolerance);
 
 	    //Pass a scalarized function through the 
 	    //Nlopt Adapter to the Nlopt object
