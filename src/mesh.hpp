@@ -1,8 +1,12 @@
+#ifndef mesh_hpp
+#define mesh_hpp
+
 #include <math.h>
 #include <numeric>
 #include <algorithm>
 #include <vector>
 #include <set>
+#include <map>
 
 #include "boost/bind.hpp"
 #include "boost/function.hpp"
@@ -20,6 +24,10 @@ namespace Mesh {
 
 	//Placeholder for a standard interface
 	struct Interface {	};
+
+    typedef std::vector< double > point_t;
+    typedef int ind_t;
+    typedef std::vector< ind_t > coord_t;
 
 	//Basic function for outputting vector to a stream
 	template< typename T>
@@ -39,14 +47,19 @@ namespace Mesh {
 			std::vector< double > ObjectiveCoords;
 			std::vector< double > LambdaCoords;
 
+            //Maintain a global ID
+            ind_t ID;
+
 			//Maintain neighbor references
-			//std::vector< MeshPoint* > Neighbors;
+		    std::vector< MeshPoint* > NeighborP;
 			//By index in the global array
 			std::vector< int > Neighbors;
 
-			MeshPoint(	std::vector< double > &Design, 
+			MeshPoint(	ind_t ID,
+                        std::vector< double > &Design, 
 						std::vector< double > &Objective, 
 						std::vector< double > &Lambdas ) :
+                        ID( ID ),
 						DesignCoords( Design ), 
 						ObjectiveCoords( Objective ), 
 						LambdaCoords( Lambdas ) { }
@@ -54,6 +67,8 @@ namespace Mesh {
 			//Simple print function that dumps all values
 			void Print() {
 				int i;
+                printf("ID: ");
+                printf("%d ", this->ID );
 				printf("Design: ( ");
 				for(i=0;i<DesignCoords.size();i++)		printf("%lf ", DesignCoords[i]);
 				printf(") Obj: ( ");
@@ -62,6 +77,12 @@ namespace Mesh {
 				for(i=0;i<LambdaCoords.size();i++)		printf("%lf ", LambdaCoords[i]);
 				printf(") Links: ( ");
 				for(i=0;i<Neighbors.size();i++)			printf("%d ", Neighbors[i]);
+                /*
+                printf(") Addresses: ( ");
+                for(i=0;i<NeighborP.size();i++)			printf("%p ", NeighborP[i]);
+                printf(") this: ( ");
+                printf("%p ", this);
+                */
 				printf(")\n");
 			}
 
@@ -99,7 +120,7 @@ namespace Mesh {
 				assert( ObjectiveDim == ObjectiveSpace[i].size() );
 				assert( ObjectiveDim == Lambdas[i].size() );
 
-				MeshPoint p( DesignSpace[i], ObjectiveSpace[i], Lambdas[i] );
+				MeshPoint p( i, DesignSpace[i], ObjectiveSpace[i], Lambdas[i] );
 				this->Corners.push_back( p );
 			}
 		}
@@ -244,8 +265,6 @@ namespace Mesh {
             std::vector< int > vec (getNeighbors( ind_to_coord( ID, this->MeshDim, this->PointsPerSide ), this->PointsPerSide ));
             //Copy to a set
             std::set< int > retval(vec.begin(), vec.end()); 
-            //std::vector< int >::iterator i;
-            //for(i=vec.begin(); i!=vec.end(); i++) retval.insert( *i );
             return retval;
         }
 
@@ -255,8 +274,9 @@ namespace Mesh {
 					std::vector< std::vector< double > > ObjectiveSpace,
 					std::vector< std::vector< double > > Lambdas, 
 					int NumberOfPoints ) : MeshBase( DesignSpace, ObjectiveSpace, Lambdas),
-					PointsPerSide( NumberOfPoints ) {
-			
+					PointsPerSide( NumberOfPoints ) {}
+
+        virtual void Generate(){
 			//Generate points
 			baryTransFunc baryTrans( boost::bind( &barycentric_trans_helper, 1.0/(this->PointsPerSide-1), _1 ) );
 			int i;
@@ -284,17 +304,168 @@ namespace Mesh {
 					boost::function<double ( double, double )> comb ( 
 						boost::bind( &barycentric_trans_helper_2, 
 						barycentric[j], _1, _2) );
-					std::transform( Corners[j].DesignCoords.begin(), Corners[j].DesignCoords.end(), design.begin(), design.begin(), comb);
-					std::transform( Corners[j].ObjectiveCoords.begin(), Corners[j].ObjectiveCoords.end(), objective.begin(), objective.begin(), comb);
-					std::transform( Corners[j].LambdaCoords.begin(), Corners[j].LambdaCoords.end(), lambda.begin(), lambda.begin(), comb);
+					std::transform( this->Corners[j].DesignCoords.begin(), this->Corners[j].DesignCoords.end(), design.begin(), design.begin(), comb);
+					std::transform( this->Corners[j].ObjectiveCoords.begin(), this->Corners[j].ObjectiveCoords.end(), objective.begin(), objective.begin(), comb);
+					std::transform( this->Corners[j].LambdaCoords.begin(), this->Corners[j].LambdaCoords.end(), lambda.begin(), lambda.begin(), comb);
 				}
 				//printf("\n");
 
-				MeshPoint m( design, objective, lambda );
+				MeshPoint m( i, design, objective, lambda );
 				m.Neighbors = neighbors;
 
 				this->Points.push_back( m );
 			}
 		}
+
+        virtual std::vector< MeshPoint* > GetNeighborsOf(ind_t i){
+            std::vector< MeshPoint* > r( this->Points[i].Neighbors.size(), NULL );
+            int j;
+            for(j=0; j<r.size(); j++) r[j] = &( this->Points[ this->Points[i].Neighbors[j] ]);
+        }
 	};
+
+    class SimplexNodeSet {
+    public:
+        friend class Simplex;
+        //Return the number of subsets
+        static ind_t NumberOfSubsets( ind_t dim, ind_t SubsetsPerSide ) { return Simplex::eta( dim, SubsetsPerSide ); }
+        //Map global coordinates to subset index
+        static ind_t WhichSubset( coord_t coords, ind_t PointsPerSide, ind_t SubsetsPerSide ){
+            ind_t PointsPerSubset = PointsPerSide / SubsetsPerSide + ( PointsPerSide % SubsetsPerSide ? 1 : 0 );
+            //Rescale coordinates to Node dimensions
+            int i;
+            for(i=0; i<coords.size(); i++) coords[i] = coords[i]/PointsPerSubset;
+            //Get node index from node coordinates
+            return Simplex::coord_to_ind( coords, SubsetsPerSide );
+        }
+    };
+
+    class SimplexSubset : public Simplex {
+    public:
+        ind_t ID;
+        ind_t SubsetsPerSide;
+        coord_t origin;
+
+        //TODO: encapsulate ghost manager
+        std::map< ind_t, MeshPoint* > GlobalToGhost;
+        std::map< ind_t, std::vector< ind_t > > NeighborSubsetsToLocals;
+
+        SimplexSubset(      std::vector< point_t > DesignSpace,
+					        std::vector< point_t > ObjectiveSpace,
+					        std::vector< point_t > Lambdas, 
+					        int NumberOfPoints, ind_t ID, ind_t SubsetsPerSide) : 
+                                                            Simplex( DesignSpace, ObjectiveSpace, Lambdas, NumberOfPoints ),
+                                                            ID( ID ), SubsetsPerSide( SubsetsPerSide ) {
+            this->origin = Simplex::ind_to_coord( ID, this->MeshDim, this->SubsetsPerSide );
+        }
+
+        virtual void Generate(){
+            std::map< ind_t, ind_t > GlobalToLocal;
+            std::map< ind_t, ind_t > LocalToGlobal;
+
+            //Generate points
+			baryTransFunc baryTrans( boost::bind( &barycentric_trans_helper, 1.0/(this->PointsPerSide-1), _1 ) );
+			int i;
+			for(i=0; i<eta(this->MeshDim, this->PointsPerSide); i++){
+
+				//Get the point n-index
+				std::vector< int > v( Mesh::Simplex::ind_to_coord( i, this->MeshDim, this->PointsPerSide) ) ;
+
+                //Only generate the point if it is in this subset
+                if( this->ID == SimplexNodeSet::WhichSubset( v, this->PointsPerSide, this->SubsetsPerSide ) ){
+
+				    //Get the neighbor indicies
+				    std::vector< int > neighbors ( Mesh::Simplex::getNeighbors( v, this->PointsPerSide ) );
+
+				    //Generate the barycentric coordinates of this point
+				    v.push_back( PointsPerSide - 1 - std::accumulate(v.begin(), v.end(), 0) );
+				    std::vector< double > barycentric( v.size() );
+				    std::transform( v.begin(), v.end(), barycentric.begin(), baryTrans );
+
+				    //Generate point location in various spaces from
+				    //barycentric coordinates
+				    std::vector< double > design( this->DesignDim, 0.0 );
+				    std::vector< double > objective( this->ObjectiveDim, 0.0 );
+				    std::vector< double > lambda( this->ObjectiveDim, 0.0 );
+				    int j;
+				    for(j=0; j<barycentric.size(); j++){
+					    boost::function<double ( double, double )> comb ( 
+						    boost::bind( &barycentric_trans_helper_2, 
+						    barycentric[j], _1, _2) );
+					    std::transform( this->Corners[j].DesignCoords.begin(), this->Corners[j].DesignCoords.end(), design.begin(), design.begin(), comb);
+					    std::transform( this->Corners[j].ObjectiveCoords.begin(), this->Corners[j].ObjectiveCoords.end(), objective.begin(), objective.begin(), comb);
+					    std::transform( this->Corners[j].LambdaCoords.begin(), this->Corners[j].LambdaCoords.end(), lambda.begin(), lambda.begin(), comb);
+				    }
+
+				    MeshPoint m( i, design, objective, lambda );
+				    m.Neighbors = neighbors;
+
+                    //Temporary mapping for later optimizing member indexing
+                    GlobalToLocal[ i ] = this->Points.size();
+                    LocalToGlobal[ this->Points.size() ] = i;
+
+				    this->Points.push_back( m );
+                }
+			}
+
+            //Once the local points are generated, we need to 
+            //re-index the neighbor references to the local scheme$
+            i = 0;
+            std::vector< MeshPoint >::iterator p;
+            for(p=this->Points.begin(); p!=this->Points.end(); p++, i++){
+                int j;
+                for(j=0; j<p->Neighbors.size(); j++){
+                    //Is the neighbor a local point?
+                    std::map< ind_t, ind_t >::iterator it = GlobalToLocal.find( p->Neighbors[j] );
+                    if( it != GlobalToLocal.end() ){
+                        p->NeighborP.push_back( &(this->Points[it->second]) );
+                    }
+                    //If not, create and manage a ghost node
+                    else{
+                        point_t empty;
+                        MeshPoint* ghost = new MeshPoint( p->Neighbors[j], empty, empty, empty );
+
+                        //Register the ghost with the point
+                        p->NeighborP.push_back( ghost );
+                        //Register the ghost with the ghost manager
+                        GlobalToGhost[ p->Neighbors[j] ] = ghost;
+                        //Register this local point with the ghost manager
+                        ind_t ghostid = SimplexNodeSet::WhichSubset( Mesh::Simplex::ind_to_coord( p->Neighbors[j], this->MeshDim, this->PointsPerSide ), this->PointsPerSide, this->SubsetsPerSide );
+                        //Have we seen this subset yet?
+                        if( NeighborSubsetsToLocals.find( ghostid ) !=  NeighborSubsetsToLocals.end() ){
+                            NeighborSubsetsToLocals[ ghostid ].push_back( i );
+                        }
+                        else{
+                            std::vector< ind_t > v( 1, i );
+                            NeighborSubsetsToLocals[ ghostid ] = v;
+                        }
+                    }
+                }
+            }
+
+        }
+
+        virtual std::vector< MeshPoint* > GetNeighborsOf(ind_t i){
+            return std::vector< MeshPoint* > ( this->Points[i].NeighborP.begin(), this->Points[i].NeighborP.end() );
+        }
+
+        virtual void Print(){
+            Simplex::Print();
+            printf("Incoming Ghosts: \n");
+            std::map< ind_t, MeshPoint* >::iterator i;
+            for(i=GlobalToGhost.begin(); i!=GlobalToGhost.end(); i++){
+                i->second->Print();
+            }
+            printf("Outgoing Ghosts: \n");
+            std::map< ind_t, std::vector< ind_t > >::iterator it;
+            for(it=NeighborSubsetsToLocals.begin(); it!=NeighborSubsetsToLocals.end(); it++){
+                printf("To %d: ", it->first);
+                std::vector< ind_t >::iterator ind;
+                for(ind=it->second.begin(); ind!=it->second.end(); ind++) printf("%d ", *ind);
+                printf("\n");
+            }
+        }
+    };
 }
+
+#endif
