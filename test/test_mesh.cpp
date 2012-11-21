@@ -238,9 +238,9 @@ namespace {
     }
 
     TEST(SimplexSubsetTest, Alive){
-        int dim = 4;
-        int subsetsperside = 2;
-        int pointsperside = 6;
+        int dim = 3;
+        int subsetsperside = 3;
+        int pointsperside = 3;
 
 		//Setup the corners
 		srand( 0 );
