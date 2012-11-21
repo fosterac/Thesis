@@ -26,19 +26,10 @@ namespace Pareto {
 	private:
 		Problem::Interface *Prob;
 
-        //typedef JobQueue< Communication::SimulatedRemote< functionSet_t > > queue_t;
+        typedef Communication::Interface comm_t;
+        comm_t& Comm;
 
-        //Local evaluations are based on a simulated remote 
-#ifdef LOCAL_EVAL
-        typedef Communication::SimulatedRemote< functionSet_t > comm_t;
-#endif
-#ifdef REMOTE_EVAL
-#ifdef HAS_MPI
-        typedef Communication::AdHoc< typename Communication::CommImpl::MPI > comm_t;
-#endif
-#endif
-
-        //The rest of the evaluation chain is agnostic to the
+        //The evaluation chain is agnostic to the
         //local vs. remote evaluation strategy
         typedef JobQueue< comm_t > queue_t;
         queue_t Queue;
@@ -67,7 +58,7 @@ namespace Pareto {
 
 	public:
 #ifdef LOCAL_EVAL
-        homotopy( Problem::Interface *P, double tolerance) : Prob(P), Queue( Prob->Objectives ), Scal( Prob, Queue ), tolerance(tolerance), Opt( NULL )
+        homotopy( Problem::Interface *P, double tolerance, Communication::Interface & c) : Prob(P), Comm( c ), Queue( Comm ), Scal( Prob, Queue ), tolerance(tolerance), Opt( NULL )
 #endif
 #ifdef REMOTE_EVAL        
         homotopy( Problem::Interface *P, double tolerance) : Prob(P), Scal( Prob, Queue ), tolerance(tolerance),
@@ -76,15 +67,18 @@ namespace Pareto {
         {
 
 				//Find the individual optimae using a fixed scalarization
-                //FixedScalarization< eval_t > S(Prob, Queue);
-                FixedScalarization< Evaluator< EvaluationStrategy::Local< functionSet_t > > > S(Prob, Prob->Objectives);
+                FixedScalarization< eval_t > S(Prob, Queue);
+                //FixedScalarization< Evaluator< EvaluationStrategy::Local< functionSet_t > > > S(Prob, Prob->Objectives);
 
                 //Establish finite difference parameters
                 FiniteDifferences::Params_t FDpar = { FDstep, FDtype };
-				optimizer * op = new OptNlopt( &S, tolerance, FDpar);
+				
 
 				int i;
 				for( i=0; i<Prob->Objectives.size(); i++){
+
+                    optimizer * op = new OptNlopt( &S, tolerance, FDpar);
+
 					//Optimize the objective
 					std::vector<double> lam(Prob->Objectives.size(), 0.0);
 					lam[i] = 1.0;
@@ -95,22 +89,27 @@ namespace Pareto {
                         x[j] = (Prob->upperBounds[j] - Prob->lowerBounds[j])/2.0 + Prob->lowerBounds[j];
                     }
 
-                    //Queue.NewGroup( 0 );
+                    Queue.NewGroup( 1 );
                     OptNlopt::EXIT_COND flag = (OptNlopt::EXIT_COND) op->RunFrom( x );
                     while( flag == OptNlopt::RERUN ) {
-                        //Queue.Poll();
-                        //Queue.NewGroup( 0 );
+                        Queue.Poll();
+                        Queue.NewGroup( 1 );
                         flag = (OptNlopt::EXIT_COND) op->RunFrom( x );
                     }
 
-					std::vector<double> f( GetF( Prob->Objectives, x) );
+                    //Make sure we have a successful optimization
+                    //(Should probably print the results after they're available)
+                    if( flag != OptNlopt::SUCCESS ) throw std::runtime_error( "Unable to optimize objective." );
+
+					std::vector<double> f( S.e.eval( x ) );
 
 					//Cache the results
 					Design.push_back( x );
 					Objective.push_back( f );
 					Lambda.push_back( lam );
+                    
+                    delete op;
 				}
-				delete op;
 		}
 
         //TODO: Hack-ish, but only for now
@@ -169,13 +168,13 @@ namespace Pareto {
             FiniteDifferences::Params_t FDpar = { FDstep, FDtype };
 
 			//Construct optimizer
-			//this->Opt = new OptNlopt(&Scal, tolerance, FDpar);
+			this->Opt = new OptNlopt(&Scal, tolerance, FDpar);
 
 			//Run a set of updates
 			int j;
 			for(j=0; j<Iterations; j++){
                 //Set of optimizers
-                std::vector< optimizer* > opts( mesh.Points.size(), NULL ) ;
+                //std::vector< optimizer* > opts( mesh.Points.size(), NULL ) ;
 
                 //Status variables
                 std::vector< bool > flags(mesh.Points.size(), false);
@@ -185,14 +184,14 @@ namespace Pareto {
                 int i;
 				for(i=0; i<mesh.Points.size(); i++){
                     //Define a local optimizer
-                    opts[i] = new OptNlopt(&Scal, tolerance, FDpar);
+                    //opts[i] = new OptNlopt(&Scal, tolerance, FDpar);
 
                     //Specify a group of evaluations
                     Queue.NewGroup( i );
 
                     //Refine the point
-                    //ec = RefinePoint(i, this->Opt, mesh, NeighborConstraints);
-					ec = RefinePoint(i, opts[i], mesh, NeighborConstraints);
+                    ec = RefinePoint(i, this->Opt, mesh, NeighborConstraints);
+					//ec = RefinePoint(i, opts[i], mesh, NeighborConstraints);
                     if( ec != optimizer::RERUN ) flags[i] = true;
                 }
                 
@@ -209,8 +208,8 @@ namespace Pareto {
                     Queue.NewGroup( i );
 
                     //Run the update
-                    //ec = RefinePoint(i, this->Opt, mesh, NeighborConstraints);
-                    ec = RefinePoint(i, opts[i], mesh, NeighborConstraints);
+                    ec = RefinePoint(i, this->Opt, mesh, NeighborConstraints);
+                    //ec = RefinePoint(i, opts[i], mesh, NeighborConstraints);
 
                     if( ec != optimizer::RERUN ) flags[i] = true;
 
@@ -220,8 +219,8 @@ namespace Pareto {
 				}
                 //}
 
-                std::vector< optimizer* >::iterator iter;
-                for(iter=opts.begin(); iter!=opts.end(); iter++) delete *iter;
+                //std::vector< optimizer* >::iterator iter;
+                //for(iter=opts.begin(); iter!=opts.end(); iter++) delete *iter;
 			}
 			delete this->Opt;
 

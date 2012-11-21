@@ -8,14 +8,6 @@
 namespace Homotopy {
     namespace Communication {
 
-        class MockCommunicator {
-            int i;
-            int size;
-        public:
-            MockCommunicator(int size) : i(0), size( size ) {}
-            int PollLoop() { return (i++)%size; }
-        };
-
         class Interface {
         public:
             virtual void dispatch( const designVars_t &, size_t ) =0;
@@ -77,6 +69,46 @@ namespace Homotopy {
                 virtual void Shutdown() {}
                 virtual Status_t GetStatus(){ return 0; }
                 virtual size_t GetValue(){ return 0; }
+            };
+
+            template< typename T >
+            class Simulator : public Iface {
+            private:
+                struct req {
+                    designVars_t x;
+                    size_t id;
+                };
+                std::vector< req > requests;
+            public:
+                virtual void Init() {}
+                virtual void AsyncRecv() {}
+                virtual bool HasMessage() { return !requests.empty() ;}
+                virtual bool ShouldStop() { return false; }
+                virtual void Shutdown() {}
+                virtual Status_t GetStatus(){ return 0; }
+                virtual size_t GetValue(){ return 0; }
+
+                T P;
+                void dispatcher( size_t id, const designVars_t &x ) {
+                    req r = { x, id };
+                    requests.push_back( r );
+                }
+                bool handler(Status_t status, size_t size, std::queue< std::pair< size_t, objVars_t> >&q){
+                    typename std::vector< req >::iterator it;
+                    for(it=requests.begin(); it!=requests.end(); it++){
+
+                        objVars_t r( this->P.size() );
+                        int i;
+                        for(i=0; i<this->P.size(); i++){
+                            r[i] = (this->P[i])( it->x );
+                        }
+
+                        std::pair< size_t, objVars_t > p( it->id, r );
+                        q.push( p );
+                    }
+                    requests.clear();
+                    return true;
+                }
             };
 
 //Only include this code if we have MPI
