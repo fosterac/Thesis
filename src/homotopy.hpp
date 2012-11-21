@@ -132,6 +132,7 @@ namespace Pareto {
 		void GetFront(int NumPoints, int Iterations){
 			//Instantiate mesh
 			Mesh::Simplex mesh( this->Design, this->Objective, this->Lambda, NumPoints);
+            mesh.Generate();
 
 			/*
 			TODO: This point needs further investigation as starting from
