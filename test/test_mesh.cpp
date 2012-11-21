@@ -71,6 +71,7 @@ namespace {
 
 		//Build a Mesh
 		Mesh::Simplex mesh( D, D, D, n);
+        mesh.Generate();
 
 		//For each meshpoint
 		for(i=0; i<mesh.Points.size(); i++){
@@ -112,6 +113,7 @@ namespace {
 
 		//Build a Mesh
 		Mesh::Simplex mesh( D, D, D, n);
+        mesh.Generate();
 
         //For each meshpoint
 		for(i=0; i<mesh.Points.size(); i++){
@@ -149,6 +151,7 @@ namespace {
 		v.push_back(p);
 
 		Mesh::Simplex mesh( v, v, v, 5);
+        mesh.Generate();
 		mesh.Print();
 	}
 
@@ -178,6 +181,7 @@ namespace {
 		}
 
 		Mesh::Simplex mesh( D, O, L, 3);
+        mesh.Generate();
 		mesh.Print();
 	}
 
@@ -207,6 +211,55 @@ namespace {
 		}
 
 		Mesh::Simplex mesh( D, O, L, 3);
+        mesh.Generate();
 		mesh.Print();
 	}
+
+    TEST(SimplexNodeSetTest, One){
+        int dim = 8;
+		int n = 8;
+
+        int i;
+        for(i=0; i<Mesh::Simplex::eta(dim, n); i++){
+            Mesh::ind_t s = Mesh::SimplexNodeSet::WhichSubset( Mesh::Simplex::ind_to_coord( i, dim, n) , n, 1 );
+            EXPECT_EQ( s, 0 );
+        }
+    }
+
+    TEST(SimplexNodeSetTest, All){
+        int dim = 8;
+		int n = 8;
+
+        int i;
+        for(i=0; i<Mesh::Simplex::eta(dim, n); i++){
+            Mesh::ind_t s = Mesh::SimplexNodeSet::WhichSubset( Mesh::Simplex::ind_to_coord( i, dim, n) , n, n );
+            EXPECT_EQ( s, i );
+        }
+    }
+
+    TEST(SimplexSubsetTest, Alive){
+        int dim = 3;
+        int subsetsperside = 3;
+        int pointsperside = 3;
+
+		//Setup the corners
+		srand( 0 );
+		std::vector< std::vector < double > > D;
+		int i;
+		for(i = 0; i < dim; i++){
+			std::vector< double > v;
+			int j;
+			for(j = 0; j < dim; j++){ v.push_back( (i==j ? 1.0 : 0.0) ); }
+			D.push_back( v );
+		}
+
+        for(i=0; i<(Mesh::SimplexNodeSet::NumberOfSubsets(dim-1, subsetsperside)); i++) {
+            Mesh::SimplexSubset mesh( D, D, D, pointsperside, i, subsetsperside );
+            mesh.Generate();
+            mesh.Print();
+        }
+    }
+
+        
+    
 }
