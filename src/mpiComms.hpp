@@ -11,9 +11,10 @@
         MPI_Request req;
         size_t recv_value;
         int flag;
-        bool is_running_;
+        
 
     public:
+        bool is_running_;
         typedef MPI_Status Status_t;
         MPI_Comm *comm_m;
 

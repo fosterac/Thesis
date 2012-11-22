@@ -76,18 +76,21 @@ namespace Pareto {
 					std::vector<double> lam(Prob->Objectives.size(), 0.0);
 					lam[i] = 1.0;
 					S.SetWeights( &lam );
-					std::vector<double> x(Prob->dimDesign, 0.0);
+					std::vector<double> start(Prob->dimDesign, 0.0);
                     int j;
                     for(j=0; j<Prob->dimDesign; j++){
-                        x[j] = (Prob->upperBounds[j] - Prob->lowerBounds[j])/2.0 + Prob->lowerBounds[j];
+                        start[j] = (Prob->upperBounds[j] - Prob->lowerBounds[j])/2.0 + Prob->lowerBounds[j];
                     }
 
-                    Queue.NewGroup( 1 );
-                    OptNlopt::EXIT_COND flag = (OptNlopt::EXIT_COND) op->RunFrom( x );
-                    while( flag == OptNlopt::RERUN ) {
+                    std::vector<double> x(start);
+                    Queue.NewGroup( i );
+                    optimizer::EXIT_COND flag = (optimizer::EXIT_COND) op->RunFrom( x );
+                    while( flag == optimizer::RERUN ) {
                         Queue.Poll();
-                        Queue.NewGroup( 1 );
-                        flag = (OptNlopt::EXIT_COND) op->RunFrom( x );
+                        Queue.NewGroup( i );
+
+                        x = start;
+                        flag = (optimizer::EXIT_COND) op->RunFrom( x );
                     }
 
                     //Make sure we have a successful optimization

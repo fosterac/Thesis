@@ -166,6 +166,10 @@ namespace Homotopy {
             dispatcher_t Dispatcher;
             handler_t Handler;
 
+            void shutdown(){
+                while( comm_.is_running_ ) this->poll();
+            }
+
             void dispatch( const designVars_t &x , size_t id ) {
                 //std::cout << getpid() << ": Called dispatch on ID " << id << std::endl;
                 this->poll();
