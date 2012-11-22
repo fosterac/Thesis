@@ -58,7 +58,7 @@ namespace Homotopy {
         //Communication layer implementations
         //that should allow writing simulated interfaces for testing
         namespace CommImpl {
-            typedef int Status_t;
+            
             //Interface to implement
             class Iface {
             public:
@@ -67,7 +67,7 @@ namespace Homotopy {
                 virtual bool HasMessage() { return false;}
                 virtual bool ShouldStop() { return false; }
                 virtual void Shutdown() {}
-                virtual Status_t GetStatus(){ return 0; }
+                //virtual Status_t GetStatus(){ return 0; }
                 virtual size_t GetValue(){ return 0; }
             };
 
@@ -80,6 +80,7 @@ namespace Homotopy {
                 };
                 std::vector< req > requests;
             public:
+                typedef int Status_t;
                 virtual void Init() {}
                 virtual void AsyncRecv() {}
                 virtual bool HasMessage() { return !requests.empty() ;}
@@ -160,7 +161,7 @@ namespace Homotopy {
             }
 
             typedef boost::function<void (size_t, const designVars_t &)> dispatcher_t;
-            typedef boost::function<bool (typename CommImpl::Status_t, size_t, std::queue< std::pair< size_t, objVars_t> >&)> handler_t;
+            typedef boost::function<bool (typename T::Status_t, size_t, std::queue< std::pair< size_t, objVars_t> >&)> handler_t;
 
             dispatcher_t Dispatcher;
             handler_t Handler;
