@@ -79,6 +79,15 @@ add_test(
     COMMAND testMesh
 )
 
+add_executable(testGhostManager
+    test_ghostmanager.cpp
+)
+target_link_libraries(testGhostManager gtest gtest_main )
+add_test(
+    NAME testGhostManager
+    COMMAND testGhostManager
+)
+
 add_executable(testEvaluator
     test_evaluator.cpp
 )

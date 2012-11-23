@@ -347,8 +347,9 @@ namespace Mesh {
         coord_t origin;
 
         //TODO: encapsulate ghost manager
+        std::vector< MeshPoint* > GhostNodes;
         std::map< ind_t, MeshPoint* > GlobalToGhost;
-        std::map< ind_t, std::vector< ind_t > > NeighborSubsetsToLocals;
+        std::map< ind_t, std::vector< MeshPoint* > > NeighborSubsetsToLocals;
 
         SimplexSubset(      std::vector< point_t > DesignSpace,
 					        std::vector< point_t > ObjectiveSpace,
@@ -424,7 +425,8 @@ namespace Mesh {
                     else{
                         point_t empty;
                         MeshPoint* ghost = new MeshPoint( p->Neighbors[j], empty, empty, empty );
-
+                        //Register the ghost with the container (for destruction)
+                        GhostNodes.push_back( ghost );
                         //Register the ghost with the point
                         p->NeighborP.push_back( ghost );
                         //Register the ghost with the ghost manager
@@ -433,10 +435,10 @@ namespace Mesh {
                         ind_t ghostid = SimplexNodeSet::WhichSubset( Mesh::Simplex::ind_to_coord( p->Neighbors[j], this->MeshDim, this->PointsPerSide ), this->PointsPerSide, this->SubsetsPerSide );
                         //Have we seen this subset yet?
                         if( NeighborSubsetsToLocals.find( ghostid ) !=  NeighborSubsetsToLocals.end() ){
-                            NeighborSubsetsToLocals[ ghostid ].push_back( i );
+                            NeighborSubsetsToLocals[ ghostid ].push_back( &(*p) );
                         }
                         else{
-                            std::vector< ind_t > v( 1, i );
+                            std::vector< MeshPoint* > v( 1, &(*p) );
                             NeighborSubsetsToLocals[ ghostid ] = v;
                         }
                     }
@@ -457,11 +459,11 @@ namespace Mesh {
                 i->second->Print();
             }
             printf("Outgoing Ghosts: \n");
-            std::map< ind_t, std::vector< ind_t > >::iterator it;
+            std::map< ind_t, std::vector< MeshPoint* > >::iterator it;
             for(it=NeighborSubsetsToLocals.begin(); it!=NeighborSubsetsToLocals.end(); it++){
                 printf("To %d: ", it->first);
-                std::vector< ind_t >::iterator ind;
-                for(ind=it->second.begin(); ind!=it->second.end(); ind++) printf("%d ", *ind);
+                std::vector< MeshPoint* >::iterator ind;
+                for(ind=it->second.begin(); ind!=it->second.end(); ind++) printf("%p ", *ind);
                 printf("\n");
             }
         }

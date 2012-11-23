@@ -154,6 +154,9 @@ namespace Pareto {
 			//Run a set of updates
 			int j;
 			for(j=0; j<Iterations; j++){
+                //Send ghost nodes
+                //Receive ghost nodes
+
                 //Set of optimizers
                 //std::vector< optimizer* > opts( mesh.Points.size(), NULL ) ;
 

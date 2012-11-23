@@ -110,6 +110,8 @@ namespace Homotopy {
                     requests.clear();
                     return true;
                 }
+                void exchanger(){
+                }
             };
         }
 
