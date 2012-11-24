@@ -8,7 +8,7 @@
 #include "Problems.h"
 #include "HomotopyTypes.h"
 
-#include "GhostManager.hpp"
+#include "MeshSet.hpp"
 
 #include <stdio.h>
 
@@ -25,10 +25,14 @@ namespace {
     }
 
     class TestExchanger{
+    public:
         ind_t rec_ind;
         objVars_t obj;
 
-    public:
+        ind_t last_to;
+        ind_t last_addr;
+        objVars_t last_msg;
+
         TestExchanger( ind_t ind ) : rec_ind( ind ) {
             this->obj = objVars_t (1, 0.0);
         }
@@ -36,11 +40,14 @@ namespace {
             //Mock send
             while( !toSend.empty() ){
                 NeighborMessage_t& m = toSend.front();
-                printf("To %d: \n", m.first );
+                /*printf("To %d: \n", m.first );
                 std::vector< nodeEnvelope_t >::iterator i;
                 for( i=m.second.begin(); i!=m.second.end(); i++){
                     Print( i->second );
-                }
+                }*/
+                this->last_to = m.first;
+                this->last_addr = m.second[ 0 ].first;
+                this->last_msg = m.second[ 0].second;
                 toSend.pop();
             }
 
@@ -67,10 +74,11 @@ namespace {
         std::map< ind_t, Point_t* > gg;
         gg[1] = &point1;
 
-        GhostManager< TestExchanger > gm( te, gg, ns );
-
+        GhostManager< TestExchanger > gm( te );
+        gm.Add( 1, gg, ns );
         gm.Exchange();
 
-        Print(point1.ObjectiveCoords);
+        EXPECT_EQ( point0.ObjectiveCoords, te.last_msg );
+        EXPECT_EQ( point1.ObjectiveCoords, te.obj );
 	}
 }

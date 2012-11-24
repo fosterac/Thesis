@@ -23,7 +23,12 @@
 namespace Mesh {
 
 	//Placeholder for a standard interface
-	struct Interface {	};
+	struct Interface {	
+        virtual void Generate() =0;
+        virtual void Refresh() =0;
+        virtual void Print() =0;
+        virtual void WriteOut( const char* ) =0;
+    };
 
     typedef std::vector< double > point_t;
     typedef int ind_t;
@@ -317,6 +322,8 @@ namespace Mesh {
 			}
 		}
 
+        virtual void Refresh() {}
+
         virtual std::vector< MeshPoint* > GetNeighborsOf(ind_t i){
             std::vector< MeshPoint* > r( this->Points[i].Neighbors.size(), NULL );
             int j;
@@ -346,7 +353,7 @@ namespace Mesh {
         ind_t SubsetsPerSide;
         coord_t origin;
 
-        //TODO: encapsulate ghost manager
+        //TODO: rework this for better encapsulation
         std::vector< MeshPoint* > GhostNodes;
         std::map< ind_t, MeshPoint* > GlobalToGhost;
         std::map< ind_t, std::vector< MeshPoint* > > NeighborSubsetsToLocals;
@@ -446,6 +453,8 @@ namespace Mesh {
             }
 
         }
+
+        virtual void Refresh() {}
 
         virtual std::vector< MeshPoint* > GetNeighborsOf(ind_t i){
             return std::vector< MeshPoint* > ( this->Points[i].NeighborP.begin(), this->Points[i].NeighborP.end() );
