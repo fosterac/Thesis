@@ -10,6 +10,7 @@
 #include "Scalarization.hpp"
 #include "Constraint.hpp"
 #include "mesh.hpp"
+#include "MeshSet.hpp"
 #include "CommInterface.hpp"
 #include "JobQueue.hpp"
 
@@ -65,7 +66,6 @@ namespace Pareto {
 
                 //Establish finite difference parameters
                 FiniteDifferences::Params_t FDpar = { FDstep, FDtype };
-				
 
 				int i;
 				for( i=0; i<Prob->Objectives.size(); i++){
@@ -104,14 +104,24 @@ namespace Pareto {
 					Objective.push_back( f );
 					Lambda.push_back( lam );
                     
+                    //TODO: Extra jobs are somehow lingering in the list...
+                    Queue.Clear();
                     delete op;
 				}
 		}
 
         typedef FEqDistanceConstraint< boost::function<objVars_t (const designVars_t&)> > FunctionSpaceEqDistConstr;
 		void GetFront(int NumPoints, int Iterations){
-			//Instantiate mesh
-			Mesh::Simplex mesh( this->Design, this->Objective, this->Lambda, NumPoints);
+			
+            //Get the list of ID's this instance is responsible for
+            int Subsets = NumPoints;
+            std::vector< ind_t > IDs;
+            int id;
+            for(id=0; id<Mesh::Simplex::eta( this->Prob->dimObj - 1, Subsets ); id++){ IDs.push_back( id ); }
+
+            //Instantiate mesh
+			//Mesh::Simplex mesh( this->Design, this->Objective, this->Lambda, NumPoints);
+            MeshSet< Mesh::SimplexSubset, comm_t > mesh( this->Design, this->Objective, this->Lambda, NumPoints, IDs , Subsets, Comm);
             mesh.Generate();
 
 			/*
@@ -122,12 +132,13 @@ namespace Pareto {
 			Starting, however, from the real locations of the interpolated
 			Pareto Set (not front) allows much larger mesh sizes without
 			roundoff errors and contains points rooted in some kind of truth.
-			*/
+			
 			//Project the design space mesh onto the objective space
 			int m;
 			for(m=0;m<mesh.Points.size();m++){
 				//mesh.Points[ m ].ObjectiveCoords = GetF( Prob->Objectives, mesh.Points[ m ].DesignCoords ) ;
 			}
+            */
 
 			//Constraints
 
@@ -156,55 +167,51 @@ namespace Pareto {
 			for(j=0; j<Iterations; j++){
                 //Send ghost nodes
                 //Receive ghost nodes
+                mesh.Refresh();
 
-                //Set of optimizers
-                //std::vector< optimizer* > opts( mesh.Points.size(), NULL ) ;
+                for(id=0;id<mesh.GetSize();id++){
+                    Mesh::MeshBase *m = mesh.Get(id);
 
-                //Status variables
-                std::vector< bool > flags(mesh.Points.size(), false);
-                optimizer::EXIT_COND ec;
+                    //Status variables
+                    std::vector< bool > flags(m->Points.size(), false);
+                    optimizer::EXIT_COND ec;
 
-                //Initial run of the optimizer for all the points
-                int i;
-				for(i=0; i<mesh.Points.size(); i++){
-                    //Define a local optimizer
-                    //opts[i] = new OptNlopt(&Scal, tolerance, FDpar);
+                    //Initial run of the optimizer for all the points
+                    int i;
+				    for(i=0; i<m->Points.size(); i++){
+                        //Define a local optimizer
+                        //opts[i] = new OptNlopt(&Scal, tolerance, FDpar);
 
-                    //Specify a group of evaluations
-                    Queue.NewGroup( i );
+                        //Specify a group of evaluations
+                        Queue.NewGroup( i );
 
-                    //Refine the point
-                    ec = RefinePoint(i, this->Opt, mesh, NeighborConstraints);
-					//ec = RefinePoint(i, opts[i], mesh, NeighborConstraints);
-                    if( ec != optimizer::RERUN ) flags[i] = true;
-                }
+                        //Refine the point
+                        ec = RefinePoint(i, this->Opt, *m, NeighborConstraints);
+					    //ec = RefinePoint(i, opts[i], mesh, NeighborConstraints);
+                        if( ec != optimizer::RERUN ) flags[i] = true;
+                    }
                 
 
-                //Do we have everything?
-                bool alldone = ( std::find( flags.begin(), flags.end(), false ) == flags.end() );
+                    //Do we have everything?
+                    bool alldone = ( std::find( flags.begin(), flags.end(), false ) == flags.end() );
 
-                //If not, run the poll loop
-                while( !alldone ){
+                    //If not, run the poll loop
+                    while( !alldone ){
 
-                    //Run poll_loop() to get i
-                    //i = Comm.PollLoop();
-                    i = Queue.Poll();
-                    Queue.NewGroup( i );
+                        //Run poll_loop() to get i
+                        i = Queue.Poll();
+                        Queue.NewGroup( i );
 
-                    //Run the update
-                    ec = RefinePoint(i, this->Opt, mesh, NeighborConstraints);
-                    //ec = RefinePoint(i, opts[i], mesh, NeighborConstraints);
+                        //Run the update
+                        ec = RefinePoint(i, this->Opt, *m, NeighborConstraints);
 
-                    if( ec != optimizer::RERUN ) flags[i] = true;
+                        if( ec != optimizer::RERUN ) flags[i] = true;
 
 
-                    //Again, do we have everything?
-				    alldone = ( std::find( flags.begin(), flags.end(), false ) == flags.end() );
-				}
-                //}
-
-                //std::vector< optimizer* >::iterator iter;
-                //for(iter=opts.begin(); iter!=opts.end(); iter++) delete *iter;
+                        //Again, do we have everything?
+				        alldone = ( std::find( flags.begin(), flags.end(), false ) == flags.end() );
+				    }
+                }
 			}
 			delete this->Opt;
 
@@ -217,16 +224,16 @@ namespace Pareto {
 
 				//NOTE: Pass only the required number of constraints to the
 				//optimizer and then establish their neighbors.
+                std::vector< std::vector< double >* > n (mesh.GetNeighborLocOf( i ));
 				int iter;
-				for(iter=0; iter<mesh.Points[i].Neighbors.size()/2; iter++) {
-					std::vector< double > *left = &mesh.Points[ mesh.Points[i].Neighbors[2*iter] ].ObjectiveCoords;
-					std::vector< double > *right = &mesh.Points[ mesh.Points[i].Neighbors[2*iter+1] ].ObjectiveCoords;
+				for(iter=0; iter<n.size()/2; iter++) {
+                    std::vector< double > *left = n[2*iter];
+                    std::vector< double > *right = n[2*iter+1];
 
 					NeighborConstraints[iter]->UpdateFrom( left, right );
 					Scal.EqualityConstraints.push_back( NeighborConstraints[iter]->function );
 				}
 
-				//this->Opt->RefreshConstraints();
                 opt->RefreshConstraints();
 
 				//Get Design points
@@ -238,9 +245,6 @@ namespace Pareto {
 					x.push_back( mesh.Points[i].LambdaCoords[k] );
 				}
 
-                //OptNlopt::EXIT_COND flag = OptNlopt::RERUN;
-                //while( flag == OptNlopt::RERUN ) flag = (OptNlopt::EXIT_COND)this->Opt->RunFrom( x );
-                //optimizer::EXIT_COND flag = (optimizer::EXIT_COND) this->Opt->RunFrom( x );
                 optimizer::EXIT_COND flag = (optimizer::EXIT_COND) opt->RunFrom( x );
 
 				if( flag == OptNlopt::SUCCESS ) {

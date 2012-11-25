@@ -129,6 +129,14 @@ namespace Mesh {
 				this->Corners.push_back( p );
 			}
 		}
+
+        virtual std::vector< point_t* > GetNeighborLocOf(ind_t i){
+            std::vector< point_t* > r( this->Points[i].NeighborP.size(), NULL );
+            int j;
+            for(j=0; j<r.size(); j++) r[j] = &( this->Points[i].NeighborP[j]->ObjectiveCoords);
+            return r;
+        }
+
 		virtual void Print() {
 			int i;
 			printf("Corners: \n");
@@ -383,12 +391,6 @@ namespace Mesh {
 		}
 
         virtual void Refresh() {}
-
-        virtual std::vector< MeshPoint* > GetNeighborsOf(ind_t i){
-            std::vector< MeshPoint* > r( this->Points[i].Neighbors.size(), NULL );
-            int j;
-            for(j=0; j<r.size(); j++) r[j] = &( this->Points[ this->Points[i].Neighbors[j] ]);
-        }
 	};
 
     class SimplexNodeSet {
@@ -515,8 +517,18 @@ namespace Mesh {
                     }
                     //If not, create and manage a ghost node
                     else{
+                        MeshPoint* ghost;
                         point_t empty;
-                        MeshPoint* ghost = new MeshPoint( p->Neighbors[j], empty, empty, empty );
+
+                        try{ 
+                            ghost = new MeshPoint( p->Neighbors[j], empty, empty, empty );
+                        }
+                        catch ( std::bad_alloc& e)
+                        {
+                            ghost = NULL;
+                            printf("Error allocating memory for ghost node %d\n", p->Neighbors[j] );
+                        }
+                         
                         //Register the ghost with the container (for destruction)
                         GhostNodes.push_back( ghost );
                         //Register the ghost with the point

@@ -1,5 +1,5 @@
-#ifndef JobQueue_hpp
-#define JobQueue_hpp
+#ifndef MeshSet_hpp
+#define MeshSet_hpp
 
 #include "HomotopyTypes.h"
 #include <map>
@@ -122,7 +122,7 @@ namespace Homotopy {
 
 
     template< typename T, typename E >
-    class MeshSet : Mesh::MeshBase {
+    class MeshSet : public Mesh::MeshBase {
     private:
         //TODO: Could encapsulate various T constructor args in struct...
         std::vector< T* > meshes;
@@ -139,10 +139,24 @@ namespace Homotopy {
                                             gman( exchanger ) {
             std::vector< ind_t >::iterator i;
             for(i=IDs.begin(); i!=IDs.end(); i++){
-                meshes.push_back( new T(    DesignSpace, ObjectiveSpace, Lambdas, 
-                                            NumberOfPoints, *i, SubsetsPerSide ) );
+                T* m;
+                try{ 
+                    m = new T(    DesignSpace, ObjectiveSpace, Lambdas, 
+                                            NumberOfPoints, *i, SubsetsPerSide ) ;
+                }
+                catch ( std::bad_alloc& e)
+                {
+                    m = NULL;
+                    printf("Error allocating memory for mesh %d\n", *i );
+                }
+
+                meshes.push_back( m );
             }
         }
+
+        virtual size_t GetSize() { return meshes.size(); }
+        virtual T* Get( ind_t id ){ return meshes[id]; }
+
         virtual void Generate() {
             typename std::vector< T* >::iterator i;
             for(i=meshes.begin(); i!=meshes.end(); i++){

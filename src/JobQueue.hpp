@@ -151,6 +151,18 @@ namespace Homotopy {
 
             return nextInd;
         }
+
+        void Clear() {
+            job_id = 0;
+            group_id = 0;
+
+            JobList.clear();
+            Complete.clear();
+            
+            JobsToGroups.clear();
+            GroupCounts.clear();
+            GroupToInd.clear();
+        }
     };
 
 }

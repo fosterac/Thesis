@@ -53,8 +53,10 @@ namespace {
             }
 
             //Mock receive
-            nodeEnvelope_t e ( this->rec_ind, this->obj );
-            received.push( e );
+            if( this->rec_ind >= 0){
+                nodeEnvelope_t e ( this->rec_ind, this->obj );
+                received.push( e );
+            }
         }
     };
     
@@ -103,12 +105,52 @@ namespace {
         std::vector< ind_t > IDs;
         IDs.push_back( 0 );
         IDs.push_back( 1 );
+        IDs.push_back( 2 );
 
-        TestExchanger te( 5 );
+        TestExchanger te( -5 );
 
         MeshSet< Mesh::SimplexSubset, TestExchanger > m( D, D, D, pointsperside, IDs , subsetsperside, te);
         m.Generate();
         m.Refresh();
         m.Print();
+    }
+
+    TEST(MESHSET, AllGhosts){
+        //Test parameters
+        int dim = 2;
+        int pointsperside = 100;
+
+        //Setup the corners
+		srand( 0 );
+		std::vector< std::vector < double > > D;
+		int i;
+		for(i = 0; i < dim; i++){
+			std::vector< double > v;
+			int j;
+			for(j = 0; j < dim; j++){ v.push_back( (i==j ? 1.0 : 0.0) ); }
+			D.push_back( v );
+		}
+
+        std::vector< ind_t > IDs;
+        for(i=0; i<Mesh::Simplex::eta( dim-1, pointsperside ); i++){
+            IDs.push_back( i );
+        }
+
+        TestExchanger te( -1 );
+
+        MeshSet< Mesh::SimplexSubset, TestExchanger > m( D, D, D, pointsperside, IDs , pointsperside, te);
+        m.Generate();
+        m.Refresh();
+        m.Refresh();
+
+        for(i=0; i<IDs.size(); i++){
+            EXPECT_EQ( m.Get(i)->Points.size(), 1 );
+            EXPECT_EQ( m.Get(i)->GhostNodes.size(), m.Get(i)->Points[0].NeighborP.size() );
+            int j;
+            for(j=0; j<m.Get(i)->GhostNodes.size(); j++){
+                Mesh::MeshBase::MeshPoint* g = m.Get(i)->GhostNodes[j];
+                EXPECT_EQ(  m.Get(g->ID)->Points[0].ObjectiveCoords, g->ObjectiveCoords );
+            }
+        }
     }
 }
