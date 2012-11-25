@@ -5,9 +5,8 @@
 #include "boost/bind.hpp"
 #include "boost/function.hpp"
 
-#include "Problems.h"
 #include "HomotopyTypes.h"
-
+#include "mesh.hpp"
 #include "MeshSet.hpp"
 
 #include <stdio.h>
@@ -40,11 +39,13 @@ namespace {
             //Mock send
             while( !toSend.empty() ){
                 NeighborMessage_t& m = toSend.front();
-                /*printf("To %d: \n", m.first );
+                /*
+                printf("To %d: \n", m.first );
                 std::vector< nodeEnvelope_t >::iterator i;
                 for( i=m.second.begin(); i!=m.second.end(); i++){
                     Print( i->second );
-                }*/
+                }
+                */
                 this->last_to = m.first;
                 this->last_addr = m.second[ 0 ].first;
                 this->last_msg = m.second[ 0].second;
@@ -81,4 +82,33 @@ namespace {
         EXPECT_EQ( point0.ObjectiveCoords, te.last_msg );
         EXPECT_EQ( point1.ObjectiveCoords, te.obj );
 	}
+
+    TEST(MESHSET, Alive){
+        //Test parameters
+        int dim = 3;
+        int subsetsperside = 2;
+        int pointsperside = 4;
+
+        //Setup the corners
+		srand( 0 );
+		std::vector< std::vector < double > > D;
+		int i;
+		for(i = 0; i < dim; i++){
+			std::vector< double > v;
+			int j;
+			for(j = 0; j < dim; j++){ v.push_back( (i==j ? 1.0 : 0.0) ); }
+			D.push_back( v );
+		}
+
+        std::vector< ind_t > IDs;
+        IDs.push_back( 0 );
+        IDs.push_back( 1 );
+
+        TestExchanger te( 5 );
+
+        MeshSet< Mesh::SimplexSubset, TestExchanger > m( D, D, D, pointsperside, IDs , subsetsperside, te);
+        m.Generate();
+        m.Refresh();
+        m.Print();
+    }
 }

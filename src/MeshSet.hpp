@@ -103,47 +103,66 @@ namespace Homotopy {
                 newNeighbors.pop();
             }
         }
+
+        void Print() {
+            printf("Managed IDs: ");
+            std::vector< ind_t >::iterator id;
+            for(id=IDs.begin(); id!=IDs.end(); id++) printf("%d ", *id);
+
+            printf("\nIncoming Ghosts: ");
+            std::map< ind_t, std::vector< Point_t* > >::iterator in;
+            for(in=GlobalToGhosts.begin(); in!=GlobalToGhosts.end(); in++) printf("%d ", in->first );
+            
+            printf("\nOutgoing Meshes: ");
+            std::map< ind_t, std::vector< Point_t* > >::iterator out;
+            for(out=SubsToLocals.begin(); out!=SubsToLocals.end(); out++) printf("%d ", out->first );
+            printf("\n");
+        }
     };
 
 
-    template< typename T, typename C >
+    template< typename T, typename E >
     class MeshSet : Mesh::MeshBase {
     private:
+        //TODO: Could encapsulate various T constructor args in struct...
         std::vector< T* > meshes;
-        GhostManager< C > gman;
+        GhostManager< E > gman;
     public:
         MeshSet(    std::vector< Mesh::point_t > DesignSpace,
                     std::vector< Mesh::point_t > ObjectiveSpace,
 					std::vector< Mesh::point_t > Lambdas, 
 					int NumberOfPoints, 
                     std::vector<Mesh::ind_t> IDs, 
-                    Mesh::ind_t SubsetsPerSide) : 
-                                            MeshBase( DesignSpace, ObjectiveSpace, Lambdas ) {
+                    Mesh::ind_t SubsetsPerSide,
+                    E & exchanger) : 
+                                            MeshBase( DesignSpace, ObjectiveSpace, Lambdas ),
+                                            gman( exchanger ) {
             std::vector< ind_t >::iterator i;
             for(i=IDs.begin(); i!=IDs.end(); i++){
-                meshes.push_back( new T(    this->DesignSpace, this->ObjectiveSpace, this->Lambdas, 
+                meshes.push_back( new T(    DesignSpace, ObjectiveSpace, Lambdas, 
                                             NumberOfPoints, *i, SubsetsPerSide ) );
-                gman.Add( *i, meshes.back().GlobalToGhost, meshes.back().NeighborSubsetsToLocals );
             }
         }
         virtual void Generate() {
             typename std::vector< T* >::iterator i;
             for(i=meshes.begin(); i!=meshes.end(); i++){
-                i->Generate();
+                (*i)->Generate();
+                gman.Add( (*i)->ID, (*i)->GlobalToGhost, (*i)->NeighborSubsetsToLocals );
             }
         }
         virtual void Refresh() {
             this->gman.Exchange();
             typename std::vector< T* >::iterator i;
             for(i=meshes.begin(); i!=meshes.end(); i++){
-                i->Refresh();
+                (*i)->Refresh();
             }
         }
         virtual void Print() {
             typename std::vector< T* >::iterator i;
             for(i=meshes.begin(); i!=meshes.end(); i++){
-                i->Print();
+                (*i)->Print();
             }
+            this->gman.Print();
         }
         virtual void WriteOut( const char* f ) {
             //Don't do anything for now, since the outfile

@@ -33,13 +33,6 @@ namespace {
 		return res;
 	}
 
-	class SimplexTest : public ::testing::Test {
-	protected:
-		//vector< vector<double> > Design;
-		virtual void SetUp(){
-		}		
-	};
-
 	//Verify that the coordinate transforms are
 	//stable and reversible
 	TEST(SimplexTest, CoordinateTransforms){
@@ -94,6 +87,18 @@ namespace {
 			}
 		}
 	}
+
+    //Verify neighborhood access
+	TEST(SimplexTest, Neighborhood){
+		int dim = 3;
+		int n = 3;
+
+		int i;
+		for(i = 0; i < Mesh::Simplex::eta(dim, n); i++){
+			std::vector< int > v( Mesh::Simplex::ind_to_coord( i, dim, n) ) ;
+			PrintV< int >( Mesh::Simplex::getNeighborhood( v , n ) );
+		}
+    }
 
     //Verify that the selected neighbors are antiparallel
 	TEST(SimplexTest, NeighborAccess){

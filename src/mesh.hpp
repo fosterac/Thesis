@@ -264,6 +264,66 @@ namespace Mesh {
 			return neighbors;
 		}
 
+        static std::vector< std::vector< int > > getNeighborhoodAux( std::vector< int > coords, int n){
+			std::vector< std::vector< int > > result;
+
+			if( ! isBoundaryPoint( coords, n ) ) {
+                //Not a boundary point
+				int i;
+				for(i=0;i<coords.size();i++) {
+					if( coords[i] == 0 ) {
+                        //Only has neighborhood in positive direction
+                        coords[i] += 1;
+					    result.push_back( coords );	
+                        coords[i] -= 1;
+                    }
+                    else {
+                        //Has neighborhood in both directions
+					    coords[i] += 1;
+					    result.push_back( coords );					
+					    coords[i] -= 2;
+					    result.push_back( coords );
+					    coords[i] += 1;
+                    }
+				}
+			}
+			else{
+                //Is a boundary point
+                
+                int c;
+				for(c=0;c<coords.size();c++) {
+                    if( coords[c] == 0 ) continue;
+
+                    //Only has neighborhood in negative direction
+                    coords[c] -= 1;
+					result.push_back( coords );	
+                    coords[c] += 1;
+                }
+                
+                coords.pop_back();
+
+                //Find the diagonal "surface" neighbors
+				if( !coords.empty() ) {
+					std::vector< std::vector< int > > surface;
+                    surface = getNeighborhoodAux( coords, n );
+					int i;
+					for(i=0;i<surface.size();i++){
+						int sum = std::accumulate( surface[i].begin(), surface[i].end(), 0);
+						surface[i].push_back( n - 1 - sum );
+					}
+                    result.insert( result.end(), surface.begin(), surface.end() );
+				}
+			}
+			return result;
+		}
+		static std::vector< int > getNeighborhood( std::vector< int > coords, int n ){
+			std::vector< int > neighbors;
+			std::vector< std::vector< int > > NCoords(getNeighborhoodAux(coords, n) );
+			int i;
+			for(i=0;i<NCoords.size();i++){ neighbors.push_back( coord_to_ind(NCoords[i], n) ); }
+			return neighbors;
+		}
+
 	//public:
         std::set< int > GetNeighborIDs( int ID ){
             //Get a vector of neighbors
@@ -417,10 +477,35 @@ namespace Mesh {
 			}
 
             //Once the local points are generated, we need to 
-            //re-index the neighbor references to the local scheme$
+            //re-index the neighbor references to the local scheme
             i = 0;
             std::vector< MeshPoint >::iterator p;
             for(p=this->Points.begin(); p!=this->Points.end(); p++, i++){
+
+                //For each of the points in the neighborhood (adjacency graph)
+                std::vector< ind_t > adjacent( Simplex::getNeighborhood( Simplex::ind_to_coord( p->ID, this->MeshDim, this->PointsPerSide ), this->PointsPerSide ) );
+                std::vector< ind_t >::iterator a;
+                for(a=adjacent.begin(); a!=adjacent.end(); a++){
+                    //Is it non-local?
+                    ind_t sub = SimplexNodeSet::WhichSubset( Mesh::Simplex::ind_to_coord( *a, this->MeshDim, this->PointsPerSide ), this->PointsPerSide, this->SubsetsPerSide );
+                    if( sub != this->ID ){
+                        //Is this current point a neighbor of the non-local adjacent point
+                        std::vector< ind_t > a_n ( Simplex::getNeighbors( Simplex::ind_to_coord( *a, this->MeshDim, this->PointsPerSide ), this->PointsPerSide ) );
+                        if( std::find( a_n.begin(), a_n.end(), p->ID ) != a_n.end() ){
+                            //(in which case we need to send this location)
+                            //So register with the ghost manager
+                            if( NeighborSubsetsToLocals.find( sub ) !=  NeighborSubsetsToLocals.end() ){
+                                NeighborSubsetsToLocals[ sub ].push_back( &(*p) );
+                            }
+                            else{
+                                std::vector< MeshPoint* > v( 1, &(*p) );
+                                NeighborSubsetsToLocals[ sub ] = v;
+                            }
+                        }
+                    }
+
+                }
+
                 int j;
                 for(j=0; j<p->Neighbors.size(); j++){
                     //Is the neighbor a local point?
@@ -472,7 +557,7 @@ namespace Mesh {
             for(it=NeighborSubsetsToLocals.begin(); it!=NeighborSubsetsToLocals.end(); it++){
                 printf("To %d: ", it->first);
                 std::vector< MeshPoint* >::iterator ind;
-                for(ind=it->second.begin(); ind!=it->second.end(); ind++) printf("%p ", *ind);
+                for(ind=it->second.begin(); ind!=it->second.end(); ind++) printf("%d ", (*ind)->ID);
                 printf("\n");
             }
         }
