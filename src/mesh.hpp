@@ -24,8 +24,8 @@ namespace Mesh {
 
 	//Placeholder for a standard interface
 	struct Interface {	
-        virtual void Generate() =0;
-        virtual void Refresh() =0;
+        virtual void Generate() {};
+        virtual void Refresh() {};
         virtual void Print() =0;
         virtual void WriteOut( const char* ) =0;
     };
@@ -42,6 +42,9 @@ namespace Mesh {
 		for(i=0;i<vec.size()-1;i++){ os << vec[i] << ", " ;	}
 		return os << vec[i] << " ]" ;
 	}
+
+//Dis/Enable synchronous mesh updates
+#define SYNCH
 
 	class MeshBase : public Interface {
 	public:
@@ -100,6 +103,13 @@ namespace Mesh {
 		std::vector< MeshPoint > Corners;
 		std::vector< MeshPoint > Points;
 
+#ifdef SYNCH
+    private:
+        std::vector< MeshPoint > ShadowPoints;
+#endif
+
+    public:
+
 		int DesignDim;
 		int ObjectiveDim;
 		int MeshDim;
@@ -137,7 +147,41 @@ namespace Mesh {
             return r;
         }
 
+#ifdef SYNCH
+        virtual void Generate() {
+            std::vector< MeshPoint >::iterator i;
+            for(i=Points.begin(); i!=Points.end(); i++){
+                this->ShadowPoints.push_back( *i );
+            }
+        }
+        virtual void UpdatePoint( ind_t i, point_t& d, point_t& o, point_t& l ) { 
+            this->ShadowPoints[i].DesignCoords.assign(      d.begin(), d.end() );
+            this->ShadowPoints[i].ObjectiveCoords.assign(   o.begin(), o.end() );
+            this->ShadowPoints[i].LambdaCoords.assign(      l.begin(), l.end() );
+        }
+        virtual void Refresh() {
+            assert( this->ShadowPoints.size() == this->Points.size() );
+            ind_t i;
+            for(i=0; i<this->ShadowPoints.size(); i++){
+                this->Points[i].DesignCoords.assign(    this->ShadowPoints[i].DesignCoords.begin(), 
+                                                        this->ShadowPoints[i].DesignCoords.end() );
+                this->Points[i].ObjectiveCoords.assign( this->ShadowPoints[i].ObjectiveCoords.begin(), 
+                                                        this->ShadowPoints[i].ObjectiveCoords.end() );
+                this->Points[i].LambdaCoords.assign(    this->ShadowPoints[i].LambdaCoords.begin(), 
+                                                        this->ShadowPoints[i].LambdaCoords.end() );
+            }
+        }
+#else
+        virtual void UpdatePoint( ind_t i, point_t& d, point_t& o, point_t& l ) { 
+            this->Points[i].DesignCoords.assign(      d.begin(), d.end() );
+            this->Points[i].ObjectiveCoords.assign(   o.begin(), o.end() );
+            this->Points[i].LambdaCoords.assign(      l.begin(), l.end() );
+        }
+#endif
+
 		virtual void Print() {
+            this->Refresh();
+
 			int i;
 			printf("Corners: \n");
 			for(i=0;i<Corners.size();i++) Corners[i].Print();
@@ -388,9 +432,13 @@ namespace Mesh {
 
 				this->Points.push_back( m );
 			}
+
+            MeshBase::Generate();
 		}
 
-        virtual void Refresh() {}
+        virtual void Refresh() {
+            MeshBase::Refresh();
+        }
 	};
 
     class SimplexNodeSet {
@@ -400,10 +448,14 @@ namespace Mesh {
         static ind_t NumberOfSubsets( ind_t dim, ind_t SubsetsPerSide ) { return Simplex::eta( dim, SubsetsPerSide ); }
         //Map global coordinates to subset index
         static ind_t WhichSubset( coord_t coords, ind_t PointsPerSide, ind_t SubsetsPerSide ){
-            ind_t PointsPerSubset = PointsPerSide / SubsetsPerSide + ( PointsPerSide % SubsetsPerSide ? 1 : 0 );
+            ind_t PointsPerSubset = PointsPerSide / SubsetsPerSide;
+            ind_t b = PointsPerSide  - PointsPerSubset * SubsetsPerSide;
             //Rescale coordinates to Node dimensions
             int i;
-            for(i=0; i<coords.size(); i++) coords[i] = coords[i]/PointsPerSubset;
+            for(i=0; i<coords.size(); i++) {
+                if( coords[i] > b*(PointsPerSubset+1) ) coords[i] = b + (coords[i] - b*(PointsPerSubset+1))/PointsPerSubset;
+                else coords[i] = coords[i]/(PointsPerSubset+1);
+            }
             //Get node index from node coordinates
             return Simplex::coord_to_ind( coords, SubsetsPerSide );
         }
@@ -549,9 +601,12 @@ namespace Mesh {
                 }
             }
 
+            MeshBase::Generate();
         }
 
-        virtual void Refresh() {}
+        virtual void Refresh() {
+            MeshBase::Refresh();
+        }
 
         virtual std::vector< MeshPoint* > GetNeighborsOf(ind_t i){
             return std::vector< MeshPoint* > ( this->Points[i].NeighborP.begin(), this->Points[i].NeighborP.end() );

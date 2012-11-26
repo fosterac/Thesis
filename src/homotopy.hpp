@@ -114,7 +114,7 @@ namespace Pareto {
 		void GetFront(int NumPoints, int Iterations){
 			
             //Get the list of ID's this instance is responsible for
-            int Subsets = NumPoints;
+            int Subsets = 1;
             std::vector< ind_t > IDs;
             int id;
             for(id=0; id<Mesh::Simplex::eta( this->Prob->dimObj - 1, Subsets ); id++){ IDs.push_back( id ); }
@@ -170,6 +170,9 @@ namespace Pareto {
                 mesh.Refresh();
 
                 for(id=0;id<mesh.GetSize();id++){
+                    //Clear out the backlog of evaluations
+                    Queue.Clear();
+
                     Mesh::MeshBase *m = mesh.Get(id);
 
                     //Status variables
@@ -179,18 +182,14 @@ namespace Pareto {
                     //Initial run of the optimizer for all the points
                     int i;
 				    for(i=0; i<m->Points.size(); i++){
-                        //Define a local optimizer
-                        //opts[i] = new OptNlopt(&Scal, tolerance, FDpar);
 
                         //Specify a group of evaluations
                         Queue.NewGroup( i );
 
                         //Refine the point
                         ec = RefinePoint(i, this->Opt, *m, NeighborConstraints);
-					    //ec = RefinePoint(i, opts[i], mesh, NeighborConstraints);
                         if( ec != optimizer::RERUN ) flags[i] = true;
                     }
-                
 
                     //Do we have everything?
                     bool alldone = ( std::find( flags.begin(), flags.end(), false ) == flags.end() );
@@ -206,7 +205,6 @@ namespace Pareto {
                         ec = RefinePoint(i, this->Opt, *m, NeighborConstraints);
 
                         if( ec != optimizer::RERUN ) flags[i] = true;
-
 
                         //Again, do we have everything?
 				        alldone = ( std::find( flags.begin(), flags.end(), false ) == flags.end() );
@@ -249,16 +247,17 @@ namespace Pareto {
 
 				if( flag == OptNlopt::SUCCESS ) {
 					//Update design points
-					mesh.Points[i].DesignCoords.assign( x.begin(), x.begin() + Prob->dimDesign);
+                    std::vector< double > d( x.begin(), x.begin() + Prob->dimDesign );
 
 					//Update obj points
-					std::vector< double > f( GetF( Prob->Objectives, mesh.Points[i].DesignCoords ) );
-					mesh.Points[i].ObjectiveCoords.assign( f.begin(), f.end() );
+					std::vector< double > f( this->Scal.e.eval( mesh.Points[i].DesignCoords ) );
 
 					//Update lam points
 					std::vector< double > l ( x.begin() + Prob->dimDesign, x.end() );
 					l.push_back( 1.0 - std::accumulate( l.begin(), l.end(), 0.0 ) );
-					mesh.Points[i].LambdaCoords.assign( l.begin(), l.end() );
+
+                    //Run the update
+                    mesh.UpdatePoint( i, d, f, l );
 				}
 
 				//Pop the EQDist Constraints

@@ -153,4 +153,19 @@ namespace {
             }
         }
     }
+
+    TEST(SIMPLEXNODESET, Mapping){
+        int dim = 2;
+
+        int PointsPerSide = 5;
+        int SubsetsPerSide = 4;
+
+        int i;
+        for(i=0; i<Mesh::Simplex::eta( dim, PointsPerSide ); i++){
+
+            std::vector< int > coords = Mesh::Simplex::ind_to_coord( i, dim, PointsPerSide);
+
+            printf( "%d: %d\n", i, Mesh::SimplexNodeSet::WhichSubset( coords, PointsPerSide, SubsetsPerSide ) );
+        }
+    }
 }
