@@ -165,11 +165,11 @@ namespace Homotopy {
             }
         }
         virtual void Refresh() {
-            this->gman.Exchange();
             typename std::vector< T* >::iterator i;
             for(i=meshes.begin(); i!=meshes.end(); i++){
                 (*i)->Refresh();
             }
+            this->gman.Exchange();
         }
         virtual void Print() {
             typename std::vector< T* >::iterator i;

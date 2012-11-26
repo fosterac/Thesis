@@ -114,7 +114,7 @@ namespace Pareto {
 		void GetFront(int NumPoints, int Iterations){
 			
             //Get the list of ID's this instance is responsible for
-            int Subsets = 1;
+            int Subsets = 2;
             std::vector< ind_t > IDs;
             int id;
             for(id=0; id<Mesh::Simplex::eta( this->Prob->dimObj - 1, Subsets ); id++){ IDs.push_back( id ); }
