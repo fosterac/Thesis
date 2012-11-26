@@ -12,6 +12,7 @@ namespace Homotopy {
         public:
             virtual void dispatch( const designVars_t &, size_t ) =0;
             virtual void collect(std::queue< std::pair< size_t, objVars_t> >& ) =0;
+            virtual void exchanger(std::queue< typename Homotopy::NeighborMessage_t > & toSend, std::queue< typename Homotopy::nodeEnvelope_t > & received ) =0;
         };
 
         template< typename T>
@@ -52,6 +53,10 @@ namespace Homotopy {
                     std::pair< size_t, objVars_t > p( it->id, r );
                     results.push( p );
                 }
+            }
+
+            void exchanger(std::queue< typename Homotopy::NeighborMessage_t > & toSend, std::queue< typename Homotopy::nodeEnvelope_t > & received ){
+                //Do nothing for now, since all simulated mesh subsets are local
             }
         };
 

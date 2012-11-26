@@ -23,7 +23,12 @@
 namespace Mesh {
 
 	//Placeholder for a standard interface
-	struct Interface {	};
+	struct Interface {	
+        virtual void Generate() {};
+        virtual void Refresh() {};
+        virtual void Print() =0;
+        virtual void WriteOut( const char* ) =0;
+    };
 
     typedef std::vector< double > point_t;
     typedef int ind_t;
@@ -37,6 +42,9 @@ namespace Mesh {
 		for(i=0;i<vec.size()-1;i++){ os << vec[i] << ", " ;	}
 		return os << vec[i] << " ]" ;
 	}
+
+//Dis/Enable synchronous mesh updates
+#define SYNCH
 
 	class MeshBase : public Interface {
 	public:
@@ -95,6 +103,13 @@ namespace Mesh {
 		std::vector< MeshPoint > Corners;
 		std::vector< MeshPoint > Points;
 
+#ifdef SYNCH
+    private:
+        std::vector< MeshPoint > ShadowPoints;
+#endif
+
+    public:
+
 		int DesignDim;
 		int ObjectiveDim;
 		int MeshDim;
@@ -124,7 +139,49 @@ namespace Mesh {
 				this->Corners.push_back( p );
 			}
 		}
+
+        virtual std::vector< point_t* > GetNeighborLocOf(ind_t i){
+            std::vector< point_t* > r( this->Points[i].NeighborP.size(), NULL );
+            int j;
+            for(j=0; j<r.size(); j++) r[j] = &( this->Points[i].NeighborP[j]->ObjectiveCoords);
+            return r;
+        }
+
+#ifdef SYNCH
+        virtual void Generate() {
+            std::vector< MeshPoint >::iterator i;
+            for(i=Points.begin(); i!=Points.end(); i++){
+                this->ShadowPoints.push_back( *i );
+            }
+        }
+        virtual void UpdatePoint( ind_t i, point_t& d, point_t& o, point_t& l ) { 
+            this->ShadowPoints[i].DesignCoords.assign(      d.begin(), d.end() );
+            this->ShadowPoints[i].ObjectiveCoords.assign(   o.begin(), o.end() );
+            this->ShadowPoints[i].LambdaCoords.assign(      l.begin(), l.end() );
+        }
+        virtual void Refresh() {
+            assert( this->ShadowPoints.size() == this->Points.size() );
+            ind_t i;
+            for(i=0; i<this->ShadowPoints.size(); i++){
+                this->Points[i].DesignCoords.assign(    this->ShadowPoints[i].DesignCoords.begin(), 
+                                                        this->ShadowPoints[i].DesignCoords.end() );
+                this->Points[i].ObjectiveCoords.assign( this->ShadowPoints[i].ObjectiveCoords.begin(), 
+                                                        this->ShadowPoints[i].ObjectiveCoords.end() );
+                this->Points[i].LambdaCoords.assign(    this->ShadowPoints[i].LambdaCoords.begin(), 
+                                                        this->ShadowPoints[i].LambdaCoords.end() );
+            }
+        }
+#else
+        virtual void UpdatePoint( ind_t i, point_t& d, point_t& o, point_t& l ) { 
+            this->Points[i].DesignCoords.assign(      d.begin(), d.end() );
+            this->Points[i].ObjectiveCoords.assign(   o.begin(), o.end() );
+            this->Points[i].LambdaCoords.assign(      l.begin(), l.end() );
+        }
+#endif
+
 		virtual void Print() {
+            this->Refresh();
+
 			int i;
 			printf("Corners: \n");
 			for(i=0;i<Corners.size();i++) Corners[i].Print();
@@ -259,6 +316,66 @@ namespace Mesh {
 			return neighbors;
 		}
 
+        static std::vector< std::vector< int > > getNeighborhoodAux( std::vector< int > coords, int n){
+			std::vector< std::vector< int > > result;
+
+			if( ! isBoundaryPoint( coords, n ) ) {
+                //Not a boundary point
+				int i;
+				for(i=0;i<coords.size();i++) {
+					if( coords[i] == 0 ) {
+                        //Only has neighborhood in positive direction
+                        coords[i] += 1;
+					    result.push_back( coords );	
+                        coords[i] -= 1;
+                    }
+                    else {
+                        //Has neighborhood in both directions
+					    coords[i] += 1;
+					    result.push_back( coords );					
+					    coords[i] -= 2;
+					    result.push_back( coords );
+					    coords[i] += 1;
+                    }
+				}
+			}
+			else{
+                //Is a boundary point
+                
+                int c;
+				for(c=0;c<coords.size();c++) {
+                    if( coords[c] == 0 ) continue;
+
+                    //Only has neighborhood in negative direction
+                    coords[c] -= 1;
+					result.push_back( coords );	
+                    coords[c] += 1;
+                }
+                
+                coords.pop_back();
+
+                //Find the diagonal "surface" neighbors
+				if( !coords.empty() ) {
+					std::vector< std::vector< int > > surface;
+                    surface = getNeighborhoodAux( coords, n );
+					int i;
+					for(i=0;i<surface.size();i++){
+						int sum = std::accumulate( surface[i].begin(), surface[i].end(), 0);
+						surface[i].push_back( n - 1 - sum );
+					}
+                    result.insert( result.end(), surface.begin(), surface.end() );
+				}
+			}
+			return result;
+		}
+		static std::vector< int > getNeighborhood( std::vector< int > coords, int n ){
+			std::vector< int > neighbors;
+			std::vector< std::vector< int > > NCoords(getNeighborhoodAux(coords, n) );
+			int i;
+			for(i=0;i<NCoords.size();i++){ neighbors.push_back( coord_to_ind(NCoords[i], n) ); }
+			return neighbors;
+		}
+
 	//public:
         std::set< int > GetNeighborIDs( int ID ){
             //Get a vector of neighbors
@@ -315,12 +432,12 @@ namespace Mesh {
 
 				this->Points.push_back( m );
 			}
+
+            MeshBase::Generate();
 		}
 
-        virtual std::vector< MeshPoint* > GetNeighborsOf(ind_t i){
-            std::vector< MeshPoint* > r( this->Points[i].Neighbors.size(), NULL );
-            int j;
-            for(j=0; j<r.size(); j++) r[j] = &( this->Points[ this->Points[i].Neighbors[j] ]);
+        virtual void Refresh() {
+            MeshBase::Refresh();
         }
 	};
 
@@ -331,10 +448,14 @@ namespace Mesh {
         static ind_t NumberOfSubsets( ind_t dim, ind_t SubsetsPerSide ) { return Simplex::eta( dim, SubsetsPerSide ); }
         //Map global coordinates to subset index
         static ind_t WhichSubset( coord_t coords, ind_t PointsPerSide, ind_t SubsetsPerSide ){
-            ind_t PointsPerSubset = PointsPerSide / SubsetsPerSide + ( PointsPerSide % SubsetsPerSide ? 1 : 0 );
+            ind_t PointsPerSubset = PointsPerSide / SubsetsPerSide;
+            ind_t b = PointsPerSide  - PointsPerSubset * SubsetsPerSide;
             //Rescale coordinates to Node dimensions
             int i;
-            for(i=0; i<coords.size(); i++) coords[i] = coords[i]/PointsPerSubset;
+            for(i=0; i<coords.size(); i++) {
+                if( coords[i] > b*(PointsPerSubset+1) ) coords[i] = b + (coords[i] - b*(PointsPerSubset+1))/PointsPerSubset;
+                else coords[i] = coords[i]/(PointsPerSubset+1);
+            }
             //Get node index from node coordinates
             return Simplex::coord_to_ind( coords, SubsetsPerSide );
         }
@@ -346,9 +467,10 @@ namespace Mesh {
         ind_t SubsetsPerSide;
         coord_t origin;
 
-        //TODO: encapsulate ghost manager
+        //TODO: rework this for better encapsulation
+        std::vector< MeshPoint* > GhostNodes;
         std::map< ind_t, MeshPoint* > GlobalToGhost;
-        std::map< ind_t, std::vector< ind_t > > NeighborSubsetsToLocals;
+        std::map< ind_t, std::vector< MeshPoint* > > NeighborSubsetsToLocals;
 
         SimplexSubset(      std::vector< point_t > DesignSpace,
 					        std::vector< point_t > ObjectiveSpace,
@@ -409,10 +531,35 @@ namespace Mesh {
 			}
 
             //Once the local points are generated, we need to 
-            //re-index the neighbor references to the local scheme$
+            //re-index the neighbor references to the local scheme
             i = 0;
             std::vector< MeshPoint >::iterator p;
             for(p=this->Points.begin(); p!=this->Points.end(); p++, i++){
+
+                //For each of the points in the neighborhood (adjacency graph)
+                std::vector< ind_t > adjacent( Simplex::getNeighborhood( Simplex::ind_to_coord( p->ID, this->MeshDim, this->PointsPerSide ), this->PointsPerSide ) );
+                std::vector< ind_t >::iterator a;
+                for(a=adjacent.begin(); a!=adjacent.end(); a++){
+                    //Is it non-local?
+                    ind_t sub = SimplexNodeSet::WhichSubset( Mesh::Simplex::ind_to_coord( *a, this->MeshDim, this->PointsPerSide ), this->PointsPerSide, this->SubsetsPerSide );
+                    if( sub != this->ID ){
+                        //Is this current point a neighbor of the non-local adjacent point
+                        std::vector< ind_t > a_n ( Simplex::getNeighbors( Simplex::ind_to_coord( *a, this->MeshDim, this->PointsPerSide ), this->PointsPerSide ) );
+                        if( std::find( a_n.begin(), a_n.end(), p->ID ) != a_n.end() ){
+                            //(in which case we need to send this location)
+                            //So register with the ghost manager
+                            if( NeighborSubsetsToLocals.find( sub ) !=  NeighborSubsetsToLocals.end() ){
+                                NeighborSubsetsToLocals[ sub ].push_back( &(*p) );
+                            }
+                            else{
+                                std::vector< MeshPoint* > v( 1, &(*p) );
+                                NeighborSubsetsToLocals[ sub ] = v;
+                            }
+                        }
+                    }
+
+                }
+
                 int j;
                 for(j=0; j<p->Neighbors.size(); j++){
                     //Is the neighbor a local point?
@@ -422,9 +569,20 @@ namespace Mesh {
                     }
                     //If not, create and manage a ghost node
                     else{
+                        MeshPoint* ghost;
                         point_t empty;
-                        MeshPoint* ghost = new MeshPoint( p->Neighbors[j], empty, empty, empty );
 
+                        try{ 
+                            ghost = new MeshPoint( p->Neighbors[j], empty, empty, empty );
+                        }
+                        catch ( std::bad_alloc& e)
+                        {
+                            ghost = NULL;
+                            printf("Error allocating memory for ghost node %d\n", p->Neighbors[j] );
+                        }
+                         
+                        //Register the ghost with the container (for destruction)
+                        GhostNodes.push_back( ghost );
                         //Register the ghost with the point
                         p->NeighborP.push_back( ghost );
                         //Register the ghost with the ghost manager
@@ -433,16 +591,21 @@ namespace Mesh {
                         ind_t ghostid = SimplexNodeSet::WhichSubset( Mesh::Simplex::ind_to_coord( p->Neighbors[j], this->MeshDim, this->PointsPerSide ), this->PointsPerSide, this->SubsetsPerSide );
                         //Have we seen this subset yet?
                         if( NeighborSubsetsToLocals.find( ghostid ) !=  NeighborSubsetsToLocals.end() ){
-                            NeighborSubsetsToLocals[ ghostid ].push_back( i );
+                            NeighborSubsetsToLocals[ ghostid ].push_back( &(*p) );
                         }
                         else{
-                            std::vector< ind_t > v( 1, i );
+                            std::vector< MeshPoint* > v( 1, &(*p) );
                             NeighborSubsetsToLocals[ ghostid ] = v;
                         }
                     }
                 }
             }
 
+            MeshBase::Generate();
+        }
+
+        virtual void Refresh() {
+            MeshBase::Refresh();
         }
 
         virtual std::vector< MeshPoint* > GetNeighborsOf(ind_t i){
@@ -457,11 +620,11 @@ namespace Mesh {
                 i->second->Print();
             }
             printf("Outgoing Ghosts: \n");
-            std::map< ind_t, std::vector< ind_t > >::iterator it;
+            std::map< ind_t, std::vector< MeshPoint* > >::iterator it;
             for(it=NeighborSubsetsToLocals.begin(); it!=NeighborSubsetsToLocals.end(); it++){
                 printf("To %d: ", it->first);
-                std::vector< ind_t >::iterator ind;
-                for(ind=it->second.begin(); ind!=it->second.end(); ind++) printf("%d ", *ind);
+                std::vector< MeshPoint* >::iterator ind;
+                for(ind=it->second.begin(); ind!=it->second.end(); ind++) printf("%d ", (*ind)->ID);
                 printf("\n");
             }
         }

@@ -79,6 +79,15 @@ add_test(
     COMMAND testMesh
 )
 
+add_executable(testMeshSet
+    test_meshset.cpp
+)
+target_link_libraries(testMeshSet gtest gtest_main )
+add_test(
+    NAME testMeshSet
+    COMMAND testMeshSet
+)
+
 add_executable(testEvaluator
     test_evaluator.cpp
 )
