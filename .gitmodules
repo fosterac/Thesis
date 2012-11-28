@@ -1,0 +1,3 @@
+[submodule "dependencies/lib"]
+	path = dependencies/lib
+	url = git@github.com:fosterac/Thesis-dependencies.git
