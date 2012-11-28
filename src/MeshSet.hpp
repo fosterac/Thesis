@@ -8,11 +8,13 @@
 #include "mesh.hpp"
 
 namespace Homotopy {
-
+    
     typedef Mesh::ind_t ind_t;
     typedef Mesh::MeshBase::MeshPoint Point_t;
+    /*
     typedef std::pair< ind_t, objVars_t > nodeEnvelope_t;
     typedef std::pair< ind_t, std::vector< nodeEnvelope_t > > NeighborMessage_t;
+    */
 
     template< typename T>
     class GhostManager {
@@ -82,7 +84,7 @@ namespace Homotopy {
 
             //Container for results
             std::queue< nodeEnvelope_t > newNeighbors;
-            Exchanger.exchanger( ToSend, newNeighbors );
+            Exchanger.exchange( ToSend, newNeighbors );
 
             //Process received node updates
             while( !newNeighbors.empty() ){

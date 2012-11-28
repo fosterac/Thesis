@@ -18,6 +18,10 @@ namespace Homotopy {
     //Function types
     typedef boost::function<double (const designVars_t &)> function_t;
     typedef std::vector< function_t > functionSet_t;
+
+    //Solution exchange types
+    typedef std::pair< int, objVars_t > nodeEnvelope_t;
+    typedef std::pair< int, std::vector< nodeEnvelope_t > > NeighborMessage_t;
     
 }
 

@@ -12,7 +12,7 @@ namespace Homotopy {
         public:
             virtual void dispatch( const designVars_t &, size_t ) =0;
             virtual void collect(std::queue< std::pair< size_t, objVars_t> >& ) =0;
-            virtual void exchanger(std::queue< typename Homotopy::NeighborMessage_t > & toSend, std::queue< typename Homotopy::nodeEnvelope_t > & received ) =0;
+            virtual void exchange(std::queue< typename Homotopy::NeighborMessage_t > & toSend, std::queue< typename Homotopy::nodeEnvelope_t > & received ) =0;
         };
 
         template< typename T>
@@ -55,7 +55,7 @@ namespace Homotopy {
                 }
             }
 
-            void exchanger(std::queue< typename Homotopy::NeighborMessage_t > & toSend, std::queue< typename Homotopy::nodeEnvelope_t > & received ){
+            void exchange(std::queue< typename Homotopy::NeighborMessage_t > & toSend, std::queue< typename Homotopy::nodeEnvelope_t > & received ){
                 //Do nothing for now, since all simulated mesh subsets are local
             }
         };
@@ -120,12 +120,16 @@ namespace Homotopy {
 
         template< typename T >
         class AdHoc : public Interface {
+            //Received evaluations
             std::queue< std::pair< size_t, objVars_t> > q;
 
-            bool HandleMessage( std::queue< std::pair< size_t, objVars_t> >& q ) {
+            //Received ghost nodes
+            std::queue< typename Homotopy::nodeEnvelope_t > g;
+
+            bool HandleMessage() {
                 //std::cout << "Handling message..." << std::endl;
                 //this->count--;
-                return (this->Handler )( comm_.GetStatus(), comm_.GetValue(), q );
+                return (this->Handler )( comm_.GetStatus(), comm_.GetValue(), this->q, this->g );
             }
 
             void poll(){
@@ -141,7 +145,7 @@ namespace Homotopy {
                     }
                     else {
                         //std::cout << "ShouldStop = false" << std::endl;
-                        if( this->HandleMessage( this->q ) )
+                        if( this->HandleMessage() )
                             comm_.AsyncRecv();
                         else
                             break;
@@ -166,10 +170,12 @@ namespace Homotopy {
             }
 
             typedef boost::function<void (size_t, const designVars_t &)> dispatcher_t;
-            typedef boost::function<bool (typename T::Status_t, size_t, std::queue< std::pair< size_t, objVars_t> >&)> handler_t;
+            typedef boost::function<bool (typename T::Status_t, size_t, std::queue< std::pair< size_t, objVars_t> >&, std::queue< typename Homotopy::nodeEnvelope_t > &)> handler_t;
+            typedef boost::function<void (std::queue< typename Homotopy::NeighborMessage_t > & )> exchanger_t;
 
             dispatcher_t Dispatcher;
             handler_t Handler;
+            exchanger_t Exchanger;
 
             void shutdown(){
                 while( comm_.is_running_ ) this->poll();
@@ -185,15 +191,25 @@ namespace Homotopy {
             }
 
             void collect(std::queue< std::pair< size_t, objVars_t> >& Q ) {
-                //std::cout << "in collect " << std::endl;
-                //while( Q.empty() ) {
-                    this->poll();
+                this->poll();
 
-                    while( ! this->q.empty() ) {
-                        Q.push( this->q.front() );
-                        q.pop();
-                    }
-                //}
+                while( ! this->q.empty() ) {
+                    Q.push( this->q.front() );
+                    q.pop();
+                }
+            }
+            void exchange(std::queue< typename Homotopy::NeighborMessage_t > & toSend, std::queue< typename Homotopy::nodeEnvelope_t > & Rec ){
+                //Send the local nodes, if we have some
+                if( ! toSend.empty() ) (this->Exchanger)( toSend );
+
+                //Poll for other results
+                this->poll();
+
+                //Accept the ghost nodes
+                while( ! this->g.empty() ) {
+                    Rec.push( this->g.front() );
+                    g.pop();
+                }
             }
         };
     }
