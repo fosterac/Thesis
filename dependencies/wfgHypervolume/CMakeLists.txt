@@ -1,1 +1,1 @@
-add_library(wfgHypervolume hypervolume.cpp avl.cpp read.cpp)
+add_library(wfghypervolume hypervolume.cpp avl.cpp read.cpp)

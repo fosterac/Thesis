@@ -47,7 +47,7 @@ file( COPY data/ DESTINATION data/)
 add_executable(testHypervolume
     test_hypervolume.cpp
 )
-target_link_libraries(testHypervolume gtest gtest_main nlopt wfgHypervolume)
+target_link_libraries(testHypervolume gtest gtest_main nlopt wfghypervolume)
 add_test(
     NAME testHypervolume
     COMMAND testHypervolume
