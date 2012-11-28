@@ -99,7 +99,7 @@ namespace Homotopy {
                     req r = { x, id };
                     requests.push_back( r );
                 }
-                bool handler(Status_t status, size_t size, std::queue< std::pair< size_t, objVars_t> >&q){
+                bool handler(Status_t status, size_t size, std::queue< std::pair< size_t, objVars_t> >&q, std::queue< typename Homotopy::nodeEnvelope_t > & received){
                     typename std::vector< req >::iterator it;
                     for(it=requests.begin(); it!=requests.end(); it++){
 
@@ -114,6 +114,9 @@ namespace Homotopy {
                     }
                     requests.clear();
                     return true;
+                }
+                void exchange(std::queue< typename Homotopy::NeighborMessage_t > & toSend ){
+                    //Do nothing for now, since all simulated mesh subsets are local
                 }
             };
         }
