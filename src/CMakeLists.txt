@@ -1,4 +1,5 @@
-include_directories(../dependencies)
+include_directories(../dependencies/ )
+include_directories(../dependencies/lib )
 include_directories(../dependencies/nlopt-2.3/api)
 include_directories(../dependencies/alglib-3.6.0/cpp/src)
 
