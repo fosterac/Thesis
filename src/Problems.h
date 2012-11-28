@@ -1,3 +1,6 @@
+#ifndef Problems_h
+#define Problems_h
+
 namespace Problem{
 
 	//Use variant here...
@@ -6,7 +9,8 @@ namespace Problem{
 	struct Interface {
 
 		std::vector< FUNCTION > Objectives;
-		std::vector< FUNCTION > Constraints;
+		std::vector< FUNCTION > EqualityConstraints;
+		std::vector< FUNCTION > InequalityConstraints;
 
 		int dimDesign;
 		int dimObj;
@@ -19,3 +23,5 @@ namespace Problem{
 
 	Interface * Factory( std::string, int, int );
 }
+
+#endif

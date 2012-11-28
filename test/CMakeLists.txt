@@ -1,7 +1,8 @@
-include_directories(${CMAKE_SOURCE_DIR}/src)
-include_directories(${CMAKE_SOURCE_DIR}/dependencies)
-include_directories(${CMAKE_SOURCE_DIR}/dependencies/gtest-1.6.0/include)
-include_directories(${CMAKE_SOURCE_DIR}/dependencies/nlopt-2.3/api)
+include_directories(../src)
+include_directories(../dependencies)
+include_directories(../dependencies/gtest-1.6.0/include)
+include_directories(../dependencies/nlopt-2.3/api)
+include_directories(../dependencies/alglib-3.6.0/cpp/src)
 
 enable_testing()
 
@@ -23,6 +24,25 @@ add_test(
     COMMAND testNlopt
 )
 
+add_executable(testAlgLib
+    test_alglib.cpp
+)
+target_link_libraries(testAlgLib gtest gtest_main alglib )
+add_test(
+    NAME testAlgLib
+    COMMAND testAlgLib
+)
+
+add_executable(testInterpolator
+    test_interpolator.cpp
+)
+target_link_libraries(testInterpolator gtest gtest_main alglib )
+add_test(
+    NAME testInterpolator
+    COMMAND testInterpolator
+)
+
+file( COPY data/ DESTINATION data/)
 add_executable(testHypervolume
     test_hypervolume.cpp
 )
@@ -44,17 +64,71 @@ add_test(
 add_executable(testProblems
     test_problems.cpp
 )
-target_link_libraries(testProblems gtest gtest_main nlopt Problems Optimizer)
+target_link_libraries(testProblems gtest gtest_main nlopt Problems)
 add_test(
     NAME testProblems
     COMMAND testProblems
 )
 
+add_executable(testMesh
+    test_mesh.cpp
+)
+target_link_libraries(testMesh gtest gtest_main )
+add_test(
+    NAME testMesh
+    COMMAND testMesh
+)
+
+add_executable(testMeshSet
+    test_meshset.cpp
+)
+target_link_libraries(testMeshSet gtest gtest_main )
+add_test(
+    NAME testMeshSet
+    COMMAND testMeshSet
+)
+
+add_executable(testEvaluator
+    test_evaluator.cpp
+)
+target_link_libraries(testEvaluator gtest gtest_main Problems )
+add_test(
+    NAME testEvaluator
+    COMMAND testEvaluator
+)
+
 add_executable(testOptimizer
     test_optimizer.cpp
 )
-target_link_libraries(testOptimizer gtest gtest_main nlopt Problems Optimizer )
+target_link_libraries(testOptimizer gtest gtest_main nlopt Problems )
 add_test(
     NAME testOptimizer
     COMMAND testOptimizer
+)
+
+add_executable(testMarching
+    test_marching.cpp
+)
+target_link_libraries(testMarching gtest gtest_main nlopt Problems )
+add_test(
+    NAME testMarching
+    COMMAND testMarching
+)
+
+add_executable(testJobQueue
+    test_jobqueue.cpp
+)
+target_link_libraries(testJobQueue gtest gtest_main nlopt Problems )
+add_test(
+    NAME testJobQueue
+    COMMAND testJobQueue
+)
+
+add_executable(testHomotopy
+    test_homotopy.cpp
+)
+target_link_libraries(testHomotopy gtest gtest_main nlopt Problems )
+add_test(
+    NAME testHomotopy
+    COMMAND testHomotopy
 )

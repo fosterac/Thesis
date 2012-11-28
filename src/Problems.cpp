@@ -1,7 +1,7 @@
 #include <vector>
 
-#include <boost/bind.hpp>
-#include <boost/function.hpp>
+#include "boost/bind.hpp"
+#include "boost/function.hpp"
 
 #include <string>
 #include <cassert>
@@ -10,13 +10,14 @@
 #include <iostream>
 
 #include "Problems.h"
+
 #include <numeric>
 namespace helpers {
 	double addsquare( double l, double r )	{ return l + (r) * (r); }
 	double square( double x )	{ return (x) * (x); }
 }
 
-//Simple quadratic problem
+//Trivial quadratic problem
 class Basin : public Problem::Interface{
 private:
 	double obj(const std::vector< double > &x){
@@ -41,6 +42,49 @@ public:
 
 #include <math.h>
 
+//Trivial constrainted problem (from nlopt tutorial)
+class ConstrainedSR : public Problem::Interface{
+private:
+	int a1, a2, b1, b2;
+
+	double obj(const std::vector< double > &x){
+		return sqrt(x[1]);
+	}
+	double constr1(const std::vector< double > &x){
+		return -1 * x[1];
+	}
+	double constr2(const std::vector< double > &x){
+		return pow(a1*x[0] + b1, 3) - x[1];
+	}
+	double constr3(const std::vector< double > &x){
+		return pow(a2*x[0] + b2, 3) - x[1];
+	}
+public:
+	ConstrainedSR(int DimObj, int DimDesign){
+
+		a1 = 2;
+		a2 = -1;
+
+		b1 = 0;
+		b2 = 1;
+
+		this->dimObj = DimObj;
+		this->dimDesign = DimDesign;
+
+		typename Problem::FUNCTION f( boost::bind(&ConstrainedSR::obj, this, _1) );
+		this->Objectives.push_back(	f );
+
+		typename Problem::FUNCTION c1( boost::bind(&ConstrainedSR::constr1, this, _1) );
+		this->InequalityConstraints.push_back(	c1 );
+
+		typename Problem::FUNCTION c2( boost::bind(&ConstrainedSR::constr2, this, _1) );
+		this->InequalityConstraints.push_back(	c2 );
+
+		typename Problem::FUNCTION c3( boost::bind(&ConstrainedSR::constr3, this, _1) );
+		this->InequalityConstraints.push_back(	c3 );
+	}
+};
+
 //Problem FON from Pereyra 2009
 class FON : public Problem::Interface{
 private:
@@ -63,8 +107,8 @@ public:
 
 		int i;
 		for(i=0; i<dimDesign; i++){
-			this->lowerBounds.push_back( -5.0 );
-			this->upperBounds.push_back( 5.0 );
+			this->lowerBounds.push_back( -1.0 );
+			this->upperBounds.push_back( 1.0 );
 		}
 	}
 };
@@ -83,28 +127,79 @@ using namespace WFG::Toolkit;
 using namespace WFG::Toolkit::Examples;
 
 //WFG2
-class WFG2 : public Problem::Interface{
+class WFG5 : public Problem::Interface{
 private:
 	double obj(const std::vector< double > &x, const int i, const int k, const int M){
 		//We're seeing an assertion in the WFGProblems code fail 
 		//as the input vectors are "out of bounds" (<0), which is
 		//a result of the finite differences scheme.
+		
+		//return (Problems::WFG2(x, k, M))[i];
 
-		//int j;
-		//for(j=0;j<x.size();j++){ printf("%lf ", x[j]);}
-		//printf("\n");
-		return Problems::WFG2(x, k, M).at(i);
+		//This should be done with a decorator anyway
+		std::vector< double > var_x(x.begin(), x.begin() + this->dimDesign);
+		return (Problems::WFG5(var_x, k, M))[i];
 	}
 public:
-	WFG2(int DimObj, int DimDesign)	{
+	WFG5(int DimObj, int DimDesign)	{
 		this->dimObj = DimObj;
 		this->dimDesign = DimDesign;
 
 		int k = 1*(DimObj - 1);
 
+		//assert ( k == 1);
+
 		int i;
 		for(i=0; i<dimObj; i++){
-			typename Problem::FUNCTION f( boost::bind(&WFG2::obj, this, _1, i, k, DimObj) );
+			typename Problem::FUNCTION f( boost::bind(&WFG5::obj, this, _1, i, k, DimObj) );
+			this->Objectives.push_back(	f );
+		}
+		for(i=0; i<dimDesign; i++){
+			//The zero bound is enforced in the WFG code
+			//so we perturb it to allow the central difference
+			//scheme to work.
+			//this->lowerBounds.push_back( 0.0 );
+			this->lowerBounds.push_back( 1e-3 );
+			this->upperBounds.push_back( 1.0 );
+		}
+	}
+};
+
+//DTLZ2
+class DTLZ2 : public Problem::Interface{
+private:
+	static const double PI = 3.14159;
+
+	double g( const std::vector< double > &x ){
+		int i;
+		double result = 0.0;
+		for(i=this->Objectives.size()-1;i<x.size();i++){
+			result += ( x[i] - 0.5 ) * ( x[i] - 0.5 );
+		}
+		return result;
+	}
+	double obj(const std::vector< double > &x, const int objNum){
+		if( objNum == 0 ) return (1 + this->g( x )) * cos( x[0] * PI/2.0 ) * cos( x[1] * PI/2.0 );
+		if( objNum == 1 ) return (1 + this->g( x )) * cos( x[0] * PI/2.0 ) * sin( x[1] * PI/2.0 );
+		if( objNum == 2 ) return (1 + this->g( x )) * sin( x[0] * PI/2.0 ) ;
+		return 0.0;
+	}
+    double obj2(const std::vector< double > &x, const int objNum){
+		if( objNum == 0 ) return (1 + this->g( x )) * cos( x[0] * PI/2.0 ) * cos( x[1] * PI/2.0 ) * cos( x[2] * PI/2.0 );
+		if( objNum == 1 ) return (1 + this->g( x )) * cos( x[0] * PI/2.0 ) * cos( x[1] * PI/2.0 ) * sin( x[2] * PI/2.0 );
+		if( objNum == 2 ) return (1 + this->g( x )) * cos( x[0] * PI/2.0 ) * sin( x[1] * PI/2.0 );
+        if( objNum == 3 ) return (1 + this->g( x )) * sin( x[0] * PI/2.0 ) ;
+		return 0.0;
+	}
+public:
+	DTLZ2(int DimObj, int DimDesign) {
+		this->dimObj = DimObj;
+		this->dimDesign = DimDesign;
+
+		int i;
+		for(i=0; i<dimObj; i++){
+			typename Problem::FUNCTION f( boost::bind(&DTLZ2::obj, this, _1, i) );
+            if( dimObj == 4 ) f = boost::bind(&DTLZ2::obj2, this, _1, i) ;
 			this->Objectives.push_back(	f );
 		}
 		for(i=0; i<dimDesign; i++){
@@ -114,10 +209,51 @@ public:
 	}
 };
 
-Problem::Interface * Problem::Factory( std::string s, int DimObj, int DimDesign){
-	Interface * toReturn;
+//Simulation/Surrogate-based problem
+#include "interpolator.hpp"
 
-	toReturn = NULL;
+class Surrogate : public Problem::Interface{
+private:
+    std::vector< Interpolation::RBF > rbfs;
+
+	double obj(const std::vector< double > &x, const int objNum){
+		return this->rbfs[objNum].evaluate( x );
+	}
+public:
+	Surrogate(int DimObj, int DimDesign) {
+		this->dimObj = DimObj;
+		this->dimDesign = DimDesign;
+
+        std::string s[] = {"./data/rms_s.dat", "./data/rms_x.dat", "./data/emit_x.dat"};
+
+		int i;
+		for(i=0; i<dimObj; i++){
+            //Load the required data
+            std::vector< std::vector< double > > data = Interpolation::GetDataFromFile(s[i].c_str()) ;
+            //Instatntiate the rbf
+            rbfs.push_back( Interpolation::RBF(Interpolation::RBF::RESCALED, data) );
+            //bind the function
+			typename Problem::FUNCTION f( boost::bind(&Surrogate::obj, this, _1, i) );
+            //export to function list
+			this->Objectives.push_back(	f );
+		}
+
+        //param 1 limits
+		//this->lowerBounds.push_back( 0.00026 );
+		//this->upperBounds.push_back( 0.00032 );
+        this->lowerBounds.push_back( 0.0 );
+		this->upperBounds.push_back( 1.0 );
+        //param 2 limits
+        //this->lowerBounds.push_back( 15.0 );
+		//this->upperBounds.push_back( 40.0 );
+        this->lowerBounds.push_back( 0.0 );
+		this->upperBounds.push_back( 1.0 );
+	}
+};
+
+Problem::Interface * Problem::Factory( std::string s, int DimObj, int DimDesign){
+	
+	Interface * toReturn = NULL;
 	
 	//Instantiate a simple Basin problem
 	if ( s.compare(std::string("BASIN")) == 0 ){
@@ -126,17 +262,38 @@ Problem::Interface * Problem::Factory( std::string s, int DimObj, int DimDesign)
 		toReturn = new Basin(DimObj, DimDesign);
 	}
 
+	//Instantiate a problem to test constraints
+	if ( s.compare(std::string("CONST_TEST")) == 0 ){
+		//This only allows one objective
+		assert (DimObj == 1);
+		assert (DimDesign == 2);
+		toReturn = new ConstrainedSR(DimObj, DimDesign);
+	}
+
 	//Instantiate a FON problem
 	if ( s.compare(std::string("FON")) == 0 ){
-		//This only allows one objective
 		assert (DimDesign == 3);
 		toReturn = new FON(DimObj, DimDesign);
 	}
 	
-	//Instantiate a WFG2 Problem
-	if ( s.compare(std::string("WFG2")) == 0 ){
-		assert (DimDesign % 2 != 0 );
-		toReturn = new WFG2(DimObj, DimDesign);
+	//Instantiate a WFG5 Problem
+	if ( s.compare(std::string("WFG5")) == 0 ){
+		//assert (DimDesign % 2 != 0 );
+		toReturn = new WFG5(DimObj, DimDesign);
+	}
+
+	//Instantiate a DTLZ2 Problem
+	if ( s.compare(std::string("DTLZ2")) == 0 ){
+		assert (DimObj == 3 || DimObj == 4);
+		assert (DimDesign >= 2);
+		toReturn = new DTLZ2(DimObj, DimDesign);
+	}
+
+    //Instantiate a Simulation Problem
+	if ( s.compare(std::string("SURROGATE")) == 0 ){
+		assert (DimObj <= 3);
+		assert (DimDesign == 2);
+		toReturn = new Surrogate(DimObj, DimDesign);
 	}
 
 	return toReturn;
