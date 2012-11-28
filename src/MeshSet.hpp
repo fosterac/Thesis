@@ -46,6 +46,34 @@ namespace Homotopy {
             }
         }          
 
+        void Receive() {
+            //Empty send queue
+            std::queue< NeighborMessage_t > ToSend;
+            //Container for results
+            std::queue< nodeEnvelope_t > newNeighbors;
+
+            Exchanger.exchange( ToSend, newNeighbors );
+
+            //Process received node updates
+            while( !newNeighbors.empty() ){
+                nodeEnvelope_t &neighbor = newNeighbors.front();
+
+                //Do we have this registered as a ghost
+                std::map< ind_t, std::vector< Point_t* > >::iterator ghost_pos = GlobalToGhosts.find( neighbor.first );
+                if( ghost_pos != GlobalToGhosts.end() ) {
+                    std::vector< Point_t* >::iterator it;
+                    for( it=ghost_pos->second.begin(); it!=ghost_pos->second.end(); it++ ){
+                        (*it)->ObjectiveCoords = neighbor.second;
+                    }
+                }
+                else {
+                    //Something is wrong...
+                    printf("GhostManager received erroneous node!\n");
+                }
+                newNeighbors.pop();
+            }
+        }
+
         void Exchange() {
             //Container of send requests format: pair( To, vector Content )
             //Complicated, but should be automatically serializable...
@@ -62,7 +90,7 @@ namespace Homotopy {
                     //gather the points to send to these neighbors
                     std::vector< Point_t* >::iterator v;
                     for(v=n->second.begin(); v!=n->second.end(); v++){
-                        nodeEnvelope_t node( (*v)->ID, (*v)->ObjectiveCoords );
+                        nodeEnvelope_t node( (int) ((*v)->ID), (*v)->ObjectiveCoords );
                         toNode.push_back( node );
                     }
                     ToSend.push( std::pair< ind_t, std::vector< nodeEnvelope_t > > ( n->first, toNode ) );
@@ -162,8 +190,25 @@ namespace Homotopy {
         virtual void Generate() {
             typename std::vector< T* >::iterator i;
             for(i=meshes.begin(); i!=meshes.end(); i++){
+                //Generate all the meshes
                 (*i)->Generate();
+                //Place them under local management
                 gman.Add( (*i)->ID, (*i)->GlobalToGhost, (*i)->NeighborSubsetsToLocals );
+            }
+            //Send local nodes to remote locations, and 
+            //receive local/remote ghost nodes
+            this->gman.Exchange();
+
+            //Make sure to recieve all remote ghost nodes before proceeding
+            bool valid = false;
+            while( !valid ){
+                valid = true;
+                for(i=meshes.begin(); i!=meshes.end(); i++){
+                    //Probe mesh validity
+                    valid &= (*i)->Valid();
+                }
+
+                this->gman.Receive();
             }
         }
         virtual void Refresh() {

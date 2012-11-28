@@ -35,7 +35,7 @@ namespace {
         TestExchanger( ind_t ind ) : rec_ind( ind ) {
             this->obj = objVars_t (1, 0.0);
         }
-        void exchanger(  std::queue< NeighborMessage_t > & toSend, std::queue< nodeEnvelope_t > & received ){
+        void exchange(  std::queue< NeighborMessage_t > & toSend, std::queue< nodeEnvelope_t > & received ){
             //Mock send
             while( !toSend.empty() ){
                 NeighborMessage_t& m = toSend.front();

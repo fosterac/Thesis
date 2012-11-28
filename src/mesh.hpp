@@ -100,6 +100,7 @@ namespace Mesh {
 			}
 		};
 
+        bool isValid;
 		std::vector< MeshPoint > Corners;
 		std::vector< MeshPoint > Points;
 
@@ -138,6 +139,8 @@ namespace Mesh {
 				MeshPoint p( i, DesignSpace[i], ObjectiveSpace[i], Lambdas[i] );
 				this->Corners.push_back( p );
 			}
+
+            this->isValid = false;
 		}
 
         virtual std::vector< point_t* > GetNeighborLocOf(ind_t i){
@@ -153,6 +156,8 @@ namespace Mesh {
             for(i=Points.begin(); i!=Points.end(); i++){
                 this->ShadowPoints.push_back( *i );
             }
+
+            this->isValid = true;
         }
         virtual void UpdatePoint( ind_t i, point_t& d, point_t& o, point_t& l ) { 
             this->ShadowPoints[i].DesignCoords.assign(      d.begin(), d.end() );
@@ -178,6 +183,7 @@ namespace Mesh {
             this->Points[i].LambdaCoords.assign(      l.begin(), l.end() );
         }
 #endif
+        virtual bool Valid() { return isValid; }
 
 		virtual void Print() {
             this->Refresh();
@@ -377,9 +383,16 @@ namespace Mesh {
 		}
 
 	//public:
+        static std::set< int > GetNeighborIDs( int ID, int Dimension, int PPS ){
+            //Get a vector of neighbors
+            std::vector< int > vec (getNeighborhood( ind_to_coord( ID, Dimension, PPS ), PPS ) );
+            //Copy to a set
+            std::set< int > retval(vec.begin(), vec.end()); 
+            return retval;
+        }
         std::set< int > GetNeighborIDs( int ID ){
             //Get a vector of neighbors
-            std::vector< int > vec (getNeighbors( ind_to_coord( ID, this->MeshDim, this->PointsPerSide ), this->PointsPerSide ));
+            std::vector< int > vec (getNeighborhood( ind_to_coord( ID, this->MeshDim, this->PointsPerSide ), this->PointsPerSide ) );
             //Copy to a set
             std::set< int > retval(vec.begin(), vec.end()); 
             return retval;
@@ -602,6 +615,22 @@ namespace Mesh {
             }
 
             MeshBase::Generate();
+        }
+
+        virtual bool Valid() {
+            if( MeshBase::Valid() ){
+                bool valid = true;
+
+                std::vector< MeshPoint* >::iterator i=GhostNodes.begin();
+                while( valid && i!=GhostNodes.end() ){
+                    valid &= ! (*i)->ObjectiveCoords.empty();
+
+                    i++;
+                }
+
+                return valid;
+            }
+            else return false;
         }
 
         virtual void Refresh() {

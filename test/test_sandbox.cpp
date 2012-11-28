@@ -60,7 +60,7 @@ public:
 
 // Tests vertical iterator concept
 TEST_F(VerticalIterTest, Alive) {
-	const std::vector< std::vector< double > > data;
+	std::vector< std::vector< double > > data;
 	std::vector< double > v(3);
 	v[0] = 0.0; v[1] = 1.0; v[2] = 2.0;
 	data.push_back(v);

@@ -43,6 +43,8 @@ namespace {
 		printf("\n");
 	}
 
+    typedef Evaluator< EvaluationStrategy::Cached< EvaluationStrategy::Local< functionSet_t > > > eval_t;
+
 	TEST(MARCHINGHOMOTOPY, 2D){
 
 		int Points = 146;
@@ -65,17 +67,18 @@ namespace {
         FiniteDifferences::Params_t FDpar = { 1e-6, FiniteDifferences::FORWARD };
 		
 		//Get the starting point
-		Optimizer * op = new OptNlopt(&S, 1e-4, FDpar);
+		optimizer * op = new OptNlopt(&S, 1e-4, FDpar);
 		std::vector<double> x1(P->dimDesign, 0.5);
 		op->RunFrom(x1);
 		PrintF(x1, P->Objectives);
         
         //Re-scalarize the problem
-        DynamicScalarization< Evaluator< EvaluationStrategy::Cached< EvaluationStrategy::Local< functionSet_t > > > > D(P, P->Objectives);
+        DynamicScalarization< eval_t > D(P, P->Objectives);
 		
         //Establish auxilary stepping constraints
         //StepConstraint< typename Problem::FUNCTION > C(NULL, step);
-		FStepConstraint< typename Problem::FUNCTION > C(P->Objectives, NULL, step);
+        boost::function<objVars_t (const designVars_t&)> f = boost::bind( &eval_t::eval, &(D.e), _1);
+        FStepConstraint< boost::function<objVars_t (const designVars_t&)> > C(f, P->dimDesign, NULL, step);
 		D.EqualityConstraints.push_back( C.function );
 
 		op = new OptNlopt(&D, 1e-4, FDpar);

@@ -57,67 +57,72 @@ namespace Pareto {
 			return result;
 		}
 
+        void GetCorners(){
+            //Find the individual optimae using a fixed scalarization
+            FixedScalarization< eval_t > S(Prob, Queue);
+            //FixedScalarization< Evaluator< EvaluationStrategy::Local< functionSet_t > > > S(Prob, Prob->Objectives);
+
+            //Establish finite difference parameters
+            FiniteDifferences::Params_t FDpar = { FDstep, FDtype };
+
+			int i;
+			for( i=0; i<Prob->Objectives.size(); i++){
+
+                optimizer * op = new OptNlopt( &S, tolerance, FDpar);
+
+				//Optimize the objective
+				std::vector<double> lam(Prob->Objectives.size(), 0.0);
+				lam[i] = 1.0;
+				S.SetWeights( &lam );
+				std::vector<double> start(Prob->dimDesign, 0.0);
+                int j;
+                for(j=0; j<Prob->dimDesign; j++){
+                    start[j] = (Prob->upperBounds[j] - Prob->lowerBounds[j])/2.0 + Prob->lowerBounds[j];
+                }
+
+                std::vector<double> x(start);
+                this->Queue.NewGroup( i );
+                optimizer::EXIT_COND flag = (optimizer::EXIT_COND) op->RunFrom( x );
+                while( flag == optimizer::RERUN ) {
+                    this->Queue.Poll();
+                    this->Queue.NewGroup( i );
+
+                    x = start;
+                    flag = (optimizer::EXIT_COND) op->RunFrom( x );
+                }
+
+                //Make sure we have a successful optimization
+                //(Should probably print the results after they're available)
+                if( flag != OptNlopt::SUCCESS ) throw std::runtime_error( "Unable to optimize objective." );
+
+				std::vector<double> f( S.e.eval( x ) );
+
+				//Cache the results
+				this->Design.push_back( x );
+				this->Objective.push_back( f );
+				this->Lambda.push_back( lam );
+                    
+                //TODO: Extra jobs are somehow lingering in the list...
+                this->Queue.Clear();
+                delete op;
+			}
+        }
+
 	public:
         homotopy( Problem::Interface *P, double tolerance, Communication::Interface & c) : Prob(P), Comm( c ), Queue( Comm ), Scal( Prob, Queue ), tolerance(tolerance), Opt( NULL ){
 
-				//Find the individual optimae using a fixed scalarization
-                FixedScalarization< eval_t > S(Prob, Queue);
-                //FixedScalarization< Evaluator< EvaluationStrategy::Local< functionSet_t > > > S(Prob, Prob->Objectives);
-
-                //Establish finite difference parameters
-                FiniteDifferences::Params_t FDpar = { FDstep, FDtype };
-
-				int i;
-				for( i=0; i<Prob->Objectives.size(); i++){
-
-                    optimizer * op = new OptNlopt( &S, tolerance, FDpar);
-
-					//Optimize the objective
-					std::vector<double> lam(Prob->Objectives.size(), 0.0);
-					lam[i] = 1.0;
-					S.SetWeights( &lam );
-					std::vector<double> start(Prob->dimDesign, 0.0);
-                    int j;
-                    for(j=0; j<Prob->dimDesign; j++){
-                        start[j] = (Prob->upperBounds[j] - Prob->lowerBounds[j])/2.0 + Prob->lowerBounds[j];
-                    }
-
-                    std::vector<double> x(start);
-                    Queue.NewGroup( i );
-                    optimizer::EXIT_COND flag = (optimizer::EXIT_COND) op->RunFrom( x );
-                    while( flag == optimizer::RERUN ) {
-                        Queue.Poll();
-                        Queue.NewGroup( i );
-
-                        x = start;
-                        flag = (optimizer::EXIT_COND) op->RunFrom( x );
-                    }
-
-                    //Make sure we have a successful optimization
-                    //(Should probably print the results after they're available)
-                    if( flag != OptNlopt::SUCCESS ) throw std::runtime_error( "Unable to optimize objective." );
-
-					std::vector<double> f( S.e.eval( x ) );
-
-					//Cache the results
-					Design.push_back( x );
-					Objective.push_back( f );
-					Lambda.push_back( lam );
-                    
-                    //TODO: Extra jobs are somehow lingering in the list...
-                    Queue.Clear();
-                    delete op;
-				}
+				this->GetCorners();
 		}
 
         typedef FEqDistanceConstraint< boost::function<objVars_t (const designVars_t&)> > FunctionSpaceEqDistConstr;
-		void GetFront(int NumPoints, int Iterations){
+		void GetFront(int NumPoints, int Iterations, int id, int worldSize){
 			
             //Get the list of ID's this instance is responsible for
-            int Subsets = 2;
+            int Subsets = worldSize;
             std::vector< ind_t > IDs;
-            int id;
-            for(id=0; id<Mesh::Simplex::eta( this->Prob->dimObj - 1, Subsets ); id++){ IDs.push_back( id ); }
+            IDs.push_back( id );
+            //int id;
+            //for(id=0; id<Mesh::Simplex::eta( this->Prob->dimObj - 1, Subsets ); id++){ IDs.push_back( id ); }
 
             //Instantiate mesh
 			//Mesh::Simplex mesh( this->Design, this->Objective, this->Lambda, NumPoints);

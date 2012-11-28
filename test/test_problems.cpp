@@ -5,73 +5,76 @@
 #include <math.h>
 #include <cstdio>
 
-#include "nlopt.hpp"
+#include "homotopy.hpp"
 
-#include "boost/function.hpp"
-#include "Problems.h"
+using namespace Homotopy;
 
-//namespace {
+namespace {
 
-// Tests that the problem interface works
-#include "NloptAdapt.hpp"
+    TEST(PROBLEMSTest, SingleObjective) {
 
-TEST(PROBLEMSTest, SingleObjective) {
+	    int DesignVars = 3;
 
-	int DesignVars = 3;
+	    Problem::Interface * P = Problem::Factory("BASIN", 1, DesignVars);
 
-	Problem::Interface * P = Problem::Factory("BASIN", 1, DesignVars);
+	    nlopt::opt opt(nlopt::LD_SLSQP, DesignVars);
 
-	nlopt::opt opt(nlopt::LD_SLSQP, DesignVars);
+	    opt.set_lower_bounds(P->lowerBounds);
+	    opt.set_upper_bounds(P->upperBounds);
 
-	opt.set_lower_bounds(P->lowerBounds);
-	opt.set_upper_bounds(P->upperBounds);
+        std::vector <typename Problem::FUNCTION> empty;
+        bool valid= true;
+        FiniteDifferences::Params_t FDpar = { .000001, FiniteDifferences::CENTRAL };
 
-	NloptAdapt< typename Problem::FUNCTION > NA(P->Objectives[0], .000001);
+	    NloptAdapt< typename Problem::FUNCTION > NA(P->Objectives[0], &empty, &empty, valid, FDpar );
 
-	opt.set_min_objective(&NloptAdapt<typename Problem::FUNCTION>::ObjIface, (void*)&NA);
+	    opt.set_min_objective(&NloptAdapt<typename Problem::FUNCTION>::ObjIface, (void*)&NA);
 
-	opt.set_xtol_rel(1e-4);
+	    opt.set_xtol_rel(1e-4);
 
-	std::vector<double> x(DesignVars);
-	int i;
-	for(i=0; i<x.size(); i++) { x[i] = 0.3; }
-	double minf;
-	nlopt::result result = opt.optimize(x, minf);
-	printf("found minimum at f(%lf,%lf) = %lf\n", x[0], x[1], minf);
-}
+	    std::vector<double> x(DesignVars);
+	    int i;
+	    for(i=0; i<x.size(); i++) { x[i] = 0.3; }
+	    double minf;
+	    nlopt::result result = opt.optimize(x, minf);
+	    printf("found minimum at f(%lf,%lf) = %lf\n", x[0], x[1], minf);
+    }
 
-#include "Scalarization.hpp"
+    TEST(PROBLEMSTest, MultiObjective) {
 
-TEST(PROBLEMSTest, MultiObjective) {
+	    int DesignVars = 3;
 
-	int DesignVars = 3;
+	    Problem::Interface * P = Problem::Factory("FON", 2, DesignVars);
 
-	Problem::Interface * P = Problem::Factory("FON", 2, DesignVars);
+	    nlopt::opt opt(nlopt::LD_SLSQP, DesignVars);
+	    opt.set_lower_bounds(P->lowerBounds);
+	    opt.set_upper_bounds(P->upperBounds);
 
-	nlopt::opt opt(nlopt::LD_SLSQP, DesignVars);
-	opt.set_lower_bounds(P->lowerBounds);
-	opt.set_upper_bounds(P->upperBounds);
+	    //Scalarize the problem
+        FixedScalarization< Evaluator<EvaluationStrategy::Local< functionSet_t > > > S(P, P->Objectives);
+	    std::vector<double> weights;
+	    weights.push_back(1.0);
+	    weights.push_back(1.0);
+	    S.SetWeights(&weights);
 
-	FixedScalarization< typename Problem::FUNCTION > s( P );
-	std::vector<double> weights;
-	weights.push_back(1.0);
-	weights.push_back(1.0);
-	s.SetWeights(&weights);
+	    std::vector <typename Problem::FUNCTION> empty;
+        bool valid= true;
+        FiniteDifferences::Params_t FDpar = { .000001, FiniteDifferences::CENTRAL };
 
-	NloptAdapt< typename Problem::FUNCTION > NA(s.f, .000001);
+	    NloptAdapt< typename Problem::FUNCTION > NA(S.f, &empty, &empty, valid, FDpar );
 
-	opt.set_min_objective(&NloptAdapt< typename Problem::FUNCTION >::ObjIface, (void*)&NA);
+	    opt.set_min_objective(&NloptAdapt< typename Problem::FUNCTION >::ObjIface, (void*)&NA);
 
-	opt.set_xtol_rel(1e-4);
+	    opt.set_xtol_rel(1e-4);
 
-	std::vector<double> x(s.dimDesign);
-	int i;
-	for(i=0; i<x.size(); i++) { x[i] = 0.3; }
-	printf("starting at (%lf,%lf,%lf) \n", x[0], x[1], x[2]);
-	double minf=0;
-	nlopt::result result = opt.optimize(x, minf);
-	printf("found minimum at f(%lf,%lf,%lf) = %lf\n", x[0], x[1], x[2], minf);
+	    std::vector<double> x(S.dimDesign);
+	    int i;
+	    for(i=0; i<x.size(); i++) { x[i] = 0.3; }
+	    printf("starting at (%lf,%lf,%lf) \n", x[0], x[1], x[2]);
+	    double minf=0;
+	    nlopt::result result = opt.optimize(x, minf);
+	    printf("found minimum at f(%lf,%lf,%lf) = %lf\n", x[0], x[1], x[2], minf);
 
 	
 	}
-//}  //namespace
+}  //namespace

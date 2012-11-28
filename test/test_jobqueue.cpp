@@ -9,6 +9,7 @@
 #include "HomotopyTypes.h"
 
 #include "JobQueue.hpp"
+#include "CommInterface.hpp"
 
 #include <stdio.h>
 
@@ -29,7 +30,8 @@ namespace {
         Problem::Interface * P = Problem::Factory("FON", 2, 3);
 
         //Set up the evaluator framework
-        JobQueue< SimulatedRemote< functionSet_t > > E( P->Objectives );
+        Communication::SimulatedRemote< functionSet_t > C( P->Objectives );
+        JobQueue< Communication::SimulatedRemote< functionSet_t > > E( C );
 
         //Select some variables
         std::vector< double > v(3,0.5);
@@ -52,7 +54,8 @@ namespace {
         Problem::Interface * P = Problem::Factory("FON", 2, 3);
 
         //Set up the evaluator framework
-        JobQueue< SimulatedRemote< functionSet_t > > E( P->Objectives );
+        Communication::SimulatedRemote< functionSet_t > C( P->Objectives );
+        JobQueue< Communication::SimulatedRemote< functionSet_t > > E( C );
 
         //Select sets of variables
         std::vector< std::vector< double > > v;
@@ -86,8 +89,8 @@ namespace {
         Problem::Interface * P = Problem::Factory("FON", 2, 3);
 
         //Set up the evaluator framework
-        SimulatedRemote< functionSet_t > Sim( P->Objectives );
-        JobQueue< SimulatedRemote< functionSet_t > > E( Sim );
+        Communication::SimulatedRemote< functionSet_t > C( P->Objectives );
+        JobQueue< Communication::SimulatedRemote< functionSet_t > > E( C );
 
         //How many evals to request
         int NUM=57;

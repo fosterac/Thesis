@@ -64,7 +64,7 @@ add_test(
 add_executable(testProblems
     test_problems.cpp
 )
-target_link_libraries(testProblems gtest gtest_main nlopt Problems Optimizer)
+target_link_libraries(testProblems gtest gtest_main nlopt Problems)
 add_test(
     NAME testProblems
     COMMAND testProblems
