@@ -25,7 +25,7 @@ namespace {
             &Comm.comm_, _1, _2, _3 );*/
 
 		//Instantiate the homotopy
-		Pareto::homotopy h( P, 1e-3, Comm );
+		Pareto::homotopy h( P, 1e-3, 1e-6, Comm );
 
 		//Homotopically deform the ansatz
 		h.GetFront(19, 1, 0, 1);
