@@ -42,6 +42,10 @@ namespace Pareto {
 		optimizer * Opt;
 
 		double tolerance;
+        double fd_step;
+        FiniteDifferences::FD_TYPE fd_type;
+
+        //Default values
         static const double FDstep = 1e-6;
         static const FiniteDifferences::FD_TYPE FDtype = FiniteDifferences::CENTRAL ;
 
@@ -63,7 +67,7 @@ namespace Pareto {
             //FixedScalarization< Evaluator< EvaluationStrategy::Local< functionSet_t > > > S(Prob, Prob->Objectives);
 
             //Establish finite difference parameters
-            FiniteDifferences::Params_t FDpar = { FDstep, FDtype };
+            FiniteDifferences::Params_t FDpar = { this->fd_step, this->fd_type };
 
 			int i;
 			for( i=0; i<Prob->Objectives.size(); i++){
@@ -109,9 +113,8 @@ namespace Pareto {
         }
 
 	public:
-        homotopy( Problem::Interface *P, double tolerance, Communication::Interface & c) : Prob(P), Comm( c ), Queue( Comm ), Scal( Prob, Queue ), tolerance(tolerance), Opt( NULL ){
-
-				this->GetCorners();
+        homotopy( Problem::Interface *P, double tolerance, double fd_step, Communication::Interface & c) : Prob(P), Comm( c ), Queue( Comm ), Scal( Prob, Queue ), tolerance(tolerance), fd_step(FDstep), fd_type(FDtype), Opt( NULL ){
+			this->GetCorners();
 		}
 
         typedef FEqDistanceConstraint< boost::function<objVars_t (const designVars_t&)> > FunctionSpaceEqDistConstr;
@@ -162,7 +165,7 @@ namespace Pareto {
             }
 
             //Establish finite difference parameters
-            FiniteDifferences::Params_t FDpar = { FDstep, FDtype };
+            FiniteDifferences::Params_t FDpar = { this->fd_step, this->fd_type };
 
 			//Construct optimizer
 			this->Opt = new OptNlopt(&Scal, tolerance, FDpar);
