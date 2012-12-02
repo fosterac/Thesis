@@ -101,7 +101,7 @@ namespace {
     }
 
     //Verify that the selected neighbors are antiparallel
-	TEST(SimplexTest, NeighborAccess){
+	TEST(SimplexTest, DISABLED_NeighborAccess){
 		int dim = 8;
 		int n = 8;
 

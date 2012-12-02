@@ -225,9 +225,11 @@ namespace Homotopy {
             }
             this->gman.Print();
         }
-        virtual void WriteOut( const char* f ) {
-            //Don't do anything for now, since the outfile
-            //will need to persist.
+        virtual void WriteOut() {
+            typename std::vector< T* >::iterator i;
+            for(i=meshes.begin(); i!=meshes.end(); i++){
+                (*i)->WriteOut();
+            }
         }
     };
 }
