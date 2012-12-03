@@ -185,6 +185,9 @@ namespace Mesh {
             }
         }
 #else
+        virtual void Generate() {
+            this->isValid = true;
+        }
         virtual void UpdatePoint( ind_t i, point_t& d, point_t& o, point_t& l ) { 
             this->Points[i].DesignCoords.assign(      d.begin(), d.end() );
             this->Points[i].ObjectiveCoords.assign(   o.begin(), o.end() );
