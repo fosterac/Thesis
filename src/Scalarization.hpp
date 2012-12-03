@@ -84,13 +84,13 @@ protected:
 public:
 	FixedScalarization(Problem::Interface * p, typename T::BaseType e) : Scalarization<T>(p, e), weights(NULL) {
 		int i;
-		for(i=0; i<this->P->Objectives.size(); i++) { this->default_weights.push_back(1.0); }
+		for(i=0; i<this->P->dimObj; i++) { this->default_weights.push_back(1.0); }
 		this->weights = &(this->default_weights);
 	}
 	
 	//Careful: No validation of pointer
 	void SetWeights(std::vector<double> * w) { 
-		assert ( w->size() == this->P->Objectives.size() );
+		assert ( w->size() == this->P->dimObj );
 		this->weights = w; 
 	}
 };
@@ -130,11 +130,11 @@ protected:
 
 public:
 	DynamicScalarization(Problem::Interface * p, typename T::BaseType e) : Scalarization<T>(p, e) {
-		this->dimDesign = this->P->dimDesign + this->P->Objectives.size() - 1;
+		this->dimDesign = this->P->dimDesign + this->P->dimObj - 1;
 
 		//Add constraints on the individual lambda values
 		int i;
-		for(i=0; i<this->P->Objectives.size() - 1; i++) {
+		for(i=0; i<this->P->dimObj - 1; i++) {
 			this->lowerBounds.push_back(0.0);
 			this->upperBounds.push_back(1.0);
 		}
