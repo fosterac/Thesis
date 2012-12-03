@@ -260,7 +260,8 @@ namespace Pareto {
                     std::vector< double > d( x.begin(), x.begin() + Prob->dimDesign );
 
 					//Update obj points
-					std::vector< double > f( this->Scal.e.eval( mesh.Points[i].DesignCoords ) );
+					//std::vector< double > f( this->Scal.e.eval( mesh.Points[i].DesignCoords ) );
+                    std::vector< double > f( this->Scal.e.eval( d ) );
 
 					//Update lam points
 					std::vector< double > l ( x.begin() + Prob->dimDesign, x.end() );
