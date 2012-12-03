@@ -173,7 +173,7 @@ private:
 	double g( const std::vector< double > &x ){
 		int i;
 		double result = 0.0;
-		for(i=this->Objectives.size()-1;i<x.size();i++){
+		for(i=this->dimObj-1;i<x.size();i++){
 			result += ( x[i] - 0.5 ) * ( x[i] - 0.5 );
 		}
 		return result;

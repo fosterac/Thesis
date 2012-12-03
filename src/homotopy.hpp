@@ -70,12 +70,12 @@ namespace Pareto {
             FiniteDifferences::Params_t FDpar = { this->fd_step, this->fd_type };
 
 			int i;
-			for( i=0; i<Prob->Objectives.size(); i++){
+			for( i=0; i<Prob->dimObj; i++){
 
                 optimizer * op = new OptNlopt( &S, tolerance, FDpar);
 
 				//Optimize the objective
-				std::vector<double> lam(Prob->Objectives.size(), 0.0);
+				std::vector<double> lam(Prob->dimObj, 0.0);
 				lam[i] = 1.0;
 				S.SetWeights( &lam );
 				std::vector<double> start(Prob->dimDesign, 0.0);
