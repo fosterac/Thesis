@@ -126,6 +126,8 @@ namespace Pareto {
             int Subsets = worldSize;
             std::vector< ind_t > IDs;
             IDs.push_back( id );
+            //int id;
+            //for(id=0; id<Mesh::Simplex::eta( this->Prob->dimObj - 1, Subsets ); id++){ IDs.push_back( id ); }
 
             //Instantiate mesh
 			//Mesh::Simplex mesh( this->Design, this->Objective, this->Lambda, NumPoints);
@@ -222,7 +224,6 @@ namespace Pareto {
 			delete this->Opt;
 
 			mesh.Print();
-			//mesh.WriteOut( "front.txt" );
             mesh.WriteOut();
 		}
 
