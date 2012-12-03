@@ -43,7 +43,7 @@ namespace Pareto {
 
 		double tolerance;
         double fd_step;
-        FiniteDifferences::FD_TYPE fd_type;
+        
 
         //Default values
         static const double FDstep = 1e-6;
@@ -113,6 +113,8 @@ namespace Pareto {
         }
 
 	public:
+        FiniteDifferences::FD_TYPE fd_type;
+
         homotopy( Problem::Interface *P, double tolerance, double fd_step, Communication::Interface & c) : Prob(P), Comm( c ), Queue( Comm ), Scal( Prob, Queue ), tolerance(tolerance), fd_step(FDstep), fd_type(FDtype), Opt( NULL ){
 			this->GetCorners();
 		}
@@ -222,7 +224,7 @@ namespace Pareto {
 			delete this->Opt;
 
 			mesh.Print();
-			mesh.WriteOut( "front.txt" );
+            mesh.WriteOut();
 		}
 
         optimizer::EXIT_COND RefinePoint( int i, optimizer * opt, Mesh::MeshBase &mesh, std::vector< FunctionSpaceEqDistConstr * > &NeighborConstraints ) {
@@ -258,7 +260,8 @@ namespace Pareto {
                     std::vector< double > d( x.begin(), x.begin() + Prob->dimDesign );
 
 					//Update obj points
-					std::vector< double > f( this->Scal.e.eval( mesh.Points[i].DesignCoords ) );
+					//std::vector< double > f( this->Scal.e.eval( mesh.Points[i].DesignCoords ) );
+                    std::vector< double > f( this->Scal.e.eval( d ) );
 
 					//Update lam points
 					std::vector< double > l ( x.begin() + Prob->dimDesign, x.end() );

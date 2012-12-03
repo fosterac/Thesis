@@ -23,7 +23,7 @@ namespace {
 	}
 
     TEST(InterpolatorTest, FromFile) {
-		std::vector< std::vector< double > > data = Interpolation::GetDataFromFile("./data/rms_x.dat") ;
+		std::vector< std::vector< double > > data = Interpolation::GetDataFromFile("./data/rms_s.dat") ;
 
 		Interpolation::RBF rbf(Interpolation::RBF::UNSCALED, data);
 
@@ -42,14 +42,14 @@ namespace {
 	}
 
     TEST(InterpolatorTest, DISABLED_VerifyOutput) {
-		std::vector< std::vector< double > > data = Interpolation::GetDataFromFile("./data/rms_x.dat") ;
+		std::vector< std::vector< double > > data = Interpolation::GetDataFromFile("./data/rms_s.dat") ;
 
 		Interpolation::RBF rbf(Interpolation::RBF::RESCALED, data);
 
         std::vector< double > point(2, 0.0);
         double sum = 0.0;
 
-        int N = 10;
+        int N = 200;
        
         double hix = 1.0;
         double lox = 0.0;

@@ -13,6 +13,12 @@
 #include <fstream>
 #include <string>
 
+#include <cmath>
+#include <cstdlib>
+#include "Eigen/Dense"
+#include "Eigen/LU"
+using namespace Eigen;
+
 namespace Interpolation {
 	class Interpolator { };
 
@@ -29,6 +35,7 @@ namespace Interpolation {
 		alglib::rbfmodel model;
 		alglib::rbfreport report;
 
+    public:
 		template< typename T >
 		class vertical_iterator : public T::const_iterator {
 			int column;
@@ -85,13 +92,15 @@ namespace Interpolation {
 			int i;
 			for(i=0; i<N; i++) {
 				int j;
-				for(j=0; j<dim; j++) { d[i*dim + j] = Rescale( data[i][j], this->mins[j], this->ranges[j] ); }
+				for(j=0; j<dim; j++) { d[i*dim + j] = Rescale( data[i][j], this->mins[j], this->ranges[j] );
+                //if( j==dim-1 ) d[i*dim+j] =  1.0 / (1.0 + d[i*dim+j]);
+                }
 			}
 
 			return d;
 		}
 
-	public:
+	//public:
         enum SCALE {UNSCALED, RESCALED};
         SCALE scale;
 
@@ -112,8 +121,11 @@ namespace Interpolation {
 
 				alglib::rbfcreate(this->dim, 1, this->model);
 				alglib::rbfsetpoints(this->model, vals);
-				//alglib::rbfsetalgoqnn(this->model);
-                rbfsetalgomultilayer(this->model, 1.0, 5, 1.0e-2);
+				//alglib::rbfsetalgoqnn(this->model, 2.1, 5.0);
+                alglib::rbfsetalgomultilayer(this->model, 1.0, 8, 1.0e-2);
+                //rbfsetlinterm( this->model );
+                //alglib::rbfsetconstterm( this->model );
+                //alglib::rbfsetzeroterm( this->model );
 				alglib::rbfbuildmodel(this->model, this->report);
 				assert( int(this->report.terminationtype) == 1 );
 			}
@@ -162,7 +174,95 @@ namespace Interpolation {
 		}
 	};
 
-	typedef RBF_AlgLib RBF;
+    class MyRBF {
+    private:
+        int N;
+		int dim;
+		
+		std::vector< double > mins;
+		std::vector< double > ranges;
+
+        friend class RBF_AlgLib;
+
+        VectorXd weights;
+        std::vector< VectorXd > points;
+
+        inline static double Rescale( double x, double min, double range) { return (range == 0) ? x : ((x-min)/range); }
+		inline static double Unscale( double x, double min, double range) { return (range == 0) ? x : ((x*range)+min); }
+
+        double rho( double r ) { return r; }
+        //double rho( double r ) { return exp( -r * r); }
+        double dist( VectorXd& l, VectorXd& r ){ 
+            return sqrt((l-r).dot(l-r));
+        }
+        void Setup( Data& data ) {
+            VectorXd d(N);
+
+            //store the points & values
+            int i;
+            for(i=0;i<N;i++){
+                VectorXd tmp( dim );
+                int j;
+                for(j=0;j<dim;j++){
+                    tmp[j] = Rescale( data[i][j], this->mins[j], this->ranges[j] );
+                }
+                this->points.push_back( tmp );
+                d[i] = Rescale( data[i][dim], this->mins[dim], this->ranges[dim] );
+            }
+
+            //get the A matrix
+            MatrixXd A( N, N );
+            for(i=0;i<N;i++){
+                int j;
+                for(j=i;j<N;j++){
+                    double r = rho( dist( points[i], points[j] ) );
+                    A( i, j ) = r;
+                    A( j, i ) = r;
+                }
+            }
+
+            //Solve for the weights
+            //this->weights = A.colPivHouseholderQr().solve( d );
+            this->weights = A.fullPivLu().solve( d );
+        }
+
+    public:
+        enum SCALE {UNSCALED, RESCALED};
+        SCALE scale;
+
+        MyRBF( SCALE s , Data& data ) : mins( RBF_AlgLib::FindMins( data ) ), ranges( RBF_AlgLib::FindRanges( data ) ), scale( s ) {
+            //Assume one dependent variable
+			this->dim = data.front().size() - 1;
+			this->N = data.size();
+
+			assert( this->dim == 2 || this->dim == 3 );
+
+            this->Setup( data );
+        }
+
+        double evaluate(const std::vector< double > &x){
+            Eigen::VectorXd p(this->dim);
+            int n;
+            for(n=0; n<this->dim; n++) p[n]=x[n];
+
+            
+            if( this->scale == UNSCALED ){ 
+                int j;
+                for(j=0; j<dim; j++) p[j] =  Rescale( p[j], this->mins[j], this->ranges[j] );
+            }
+
+            VectorXd r( N );
+            int i;
+            for(i=0; i<this->N; i++){ r[i] = rho( dist( this->points[i], p ) ); }
+
+            if( this->scale == UNSCALED ) return Unscale( this->weights.dot( r ), this->mins.back(), this->ranges.back() );
+            return this->weights.dot( r );
+        }
+    };
+
+    //Which RBF to use...
+    //typedef RBF_AlgLib RBF;
+    typedef MyRBF RBF;
 
     Data GetDataFromFile(const char* filename){
         Data ret;

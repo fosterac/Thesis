@@ -21,13 +21,20 @@
 #include <stdio.h>
 
 namespace Mesh {
+    struct Output{
+    public:
+        //Control front/manifold output modes
+        enum MODE {FRONT, MANIFOLD};
+        static MODE mode;
+    };
+    Output::MODE Output::mode;
 
 	//Placeholder for a standard interface
 	struct Interface {	
         virtual void Generate() {};
         virtual void Refresh() {};
         virtual void Print() =0;
-        virtual void WriteOut( const char* ) =0;
+        virtual void WriteOut( const char*, Output::MODE ) =0;
     };
 
     typedef std::vector< double > point_t;
@@ -78,9 +85,9 @@ namespace Mesh {
                 printf("ID: ");
                 printf("%d ", this->ID );
 				printf("Design: ( ");
-				for(i=0;i<DesignCoords.size();i++)		printf("%lf ", DesignCoords[i]);
+				for(i=0;i<DesignCoords.size();i++)		printf("%.15lf ", DesignCoords[i]);
 				printf(") Obj: ( ");
-				for(i=0;i<ObjectiveCoords.size();i++)	printf("%lf ", ObjectiveCoords[i]);
+				for(i=0;i<ObjectiveCoords.size();i++)	printf("%.15lf ", ObjectiveCoords[i]);
 				printf(") Lam: ( ");
 				for(i=0;i<LambdaCoords.size();i++)		printf("%lf ", LambdaCoords[i]);
 				printf(") Links: ( ");
@@ -96,7 +103,8 @@ namespace Mesh {
 
 			//For outputting a meshpoint to the front file
 			friend std::ostream& operator<<(std::ostream& os, const MeshPoint& mp){
-				return os << mp.ObjectiveCoords;
+				if( Output::mode == Output::MANIFOLD ) return os << mp.DesignCoords;
+                else return os << mp.ObjectiveCoords;
 			}
 		};
 
@@ -177,6 +185,9 @@ namespace Mesh {
             }
         }
 #else
+        virtual void Generate() {
+            this->isValid = true;
+        }
         virtual void UpdatePoint( ind_t i, point_t& d, point_t& o, point_t& l ) { 
             this->Points[i].DesignCoords.assign(      d.begin(), d.end() );
             this->Points[i].ObjectiveCoords.assign(   o.begin(), o.end() );
@@ -194,13 +205,17 @@ namespace Mesh {
 			printf("Points: \n");
 			for(i=0;i<Points.size();i++) Points[i].Print();
 		}
-		void WriteOut(const char* filename) {
+        void WriteOut(const char* filename, Output::MODE m) {
+            //Different roles depending out what we're outputting
+            Output::mode = m;
+            int numcols = (Output::mode == Output::FRONT)?this->ObjectiveDim:this->DesignDim;
+
 			std::ofstream os( filename );
 			os << "{" << std::endl;
 
 			std::vector<std::string> cols;
 			int i;
-			for(i=0;i<this->ObjectiveDim;i++) {
+			for(i=0;i<numcols;i++) {
 				std::stringstream s;
 				s << "\"" << i << "\"" ;
 				cols.push_back( std::string( s.str() ) );
@@ -656,6 +671,14 @@ namespace Mesh {
                 for(ind=it->second.begin(); ind!=it->second.end(); ind++) printf("%d ", (*ind)->ID);
                 printf("\n");
             }
+        }
+        void WriteOut() {
+            std::ostringstream fout;
+            fout << "front." << this->ID;
+            MeshBase::WriteOut( fout.str().c_str(), Output::FRONT );
+            std::ostringstream mout;
+            mout << "manifold." << this->ID;
+            MeshBase::WriteOut( mout.str().c_str(), Output::MANIFOLD );
         }
     };
 }
