@@ -54,12 +54,32 @@ namespace Pareto {
 		std::vector< std::vector< double > > Objective;
 		std::vector< std::vector< double > > Lambda;
 
-		static std::vector< double > GetF(const std::vector< Problem::FUNCTION > &f, const std::vector< double > &x){
-			std::vector< double > result;
-			int i;
-			for(i=0; i<f.size(); i++) { result.push_back((f[i])(x)); }
-			return result;
-		}
+		void PreProject( MeshSet< Mesh::SimplexSubset, comm_t >& meshes, eval_t& e ){
+            int id;
+            for(id=0; id<meshes.GetSize(); id++){
+                Mesh::MeshBase *m = meshes.Get(id);
+
+                //Request a set of new evaluations
+                int i;
+				for(i=0; i<m->Points.size(); i++){
+                    this->Queue.NewGroup( i );
+                    e.eval( m->Points[i].DesignCoords );
+                }
+                //Loop while we have outstanding requests
+                int count = m->Points.size();
+                while( count > 0 ){
+                    i = Queue.Poll();
+                    designVars_t    d( m->Points[i].DesignCoords );
+                    objVars_t       o( e.eval( d ) );
+                    lamVars_t       l( m->Points[i].LambdaCoords );
+                    m->UpdatePoint( i, d, o, l );
+
+                    count--;
+                }
+
+                this->Queue.Clear();
+            }
+        }
 
         void GetCorners(){
             //Find the individual optimae using a fixed scalarization
@@ -114,9 +134,11 @@ namespace Pareto {
 
 	public:
         FiniteDifferences::FD_TYPE fd_type;
+        bool UsePreProjection;
 
         homotopy( Problem::Interface *P, double tolerance, double fd_step, Communication::Interface & c) : Prob(P), Comm( c ), Queue( Comm ), Scal( Prob, Queue ), tolerance(tolerance), fd_step(FDstep), fd_type(FDtype), Opt( NULL ){
 			this->GetCorners();
+            this->UsePreProjection = false;
 		}
 
         typedef FEqDistanceConstraint< boost::function<objVars_t (const designVars_t&)> > FunctionSpaceEqDistConstr;
@@ -126,8 +148,6 @@ namespace Pareto {
             int Subsets = worldSize;
             std::vector< ind_t > IDs;
             IDs.push_back( id );
-            //int id;
-            //for(id=0; id<Mesh::Simplex::eta( this->Prob->dimObj - 1, Subsets ); id++){ IDs.push_back( id ); }
 
             //Instantiate mesh
 			//Mesh::Simplex mesh( this->Design, this->Objective, this->Lambda, NumPoints);
@@ -142,13 +162,10 @@ namespace Pareto {
 			Starting, however, from the real locations of the interpolated
 			Pareto Set (not front) allows much larger mesh sizes without
 			roundoff errors and contains points rooted in some kind of truth.
-			
+			*/
 			//Project the design space mesh onto the objective space
-			int m;
-			for(m=0;m<mesh.Points.size();m++){
-				//mesh.Points[ m ].ObjectiveCoords = GetF( Prob->Objectives, mesh.Points[ m ].DesignCoords ) ;
-			}
-            */
+			if( this->UsePreProjection ) this->PreProject( mesh, this->Scal.e );
+            
 
 			//Constraints
 
