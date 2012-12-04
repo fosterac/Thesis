@@ -133,3 +133,12 @@ add_test(
     NAME testHomotopy
     COMMAND testHomotopy
 )
+
+add_executable(testOptimizerDetail
+    test_optimizer_detail.cpp
+)
+target_link_libraries(testOptimizerDetail gtest gtest_main nlopt Problems )
+add_test(
+    NAME testOptimizerDetail
+    COMMAND testOptimizerDetail
+)
