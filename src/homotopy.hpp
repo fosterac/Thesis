@@ -188,7 +188,7 @@ namespace Pareto {
 
 			//Construct optimizer
 			this->Opt = new OptNlopt(&Scal, tolerance, FDpar);
-            mesh.Print();
+
 			//Run a set of updates
 			int j;
 			for(j=0; j<Iterations; j++){

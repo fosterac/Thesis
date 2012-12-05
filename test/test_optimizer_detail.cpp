@@ -1,5 +1,5 @@
-//Basic marching homotopy test to validate additional
-//problem constraints
+//Permits detailed optimizer testing with specific cases
+//as well as facilities to determine basins of attraction
 
 #include "gtest/gtest.h"
 
