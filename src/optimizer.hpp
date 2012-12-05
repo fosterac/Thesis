@@ -51,6 +51,11 @@ private:
 	NloptAdapt< function_t > NA;
 	nlopt::opt opt;
 
+    //NOTE: In addition to being easy to change optimizers,
+    //we can try more traditional methods using the augmented
+    //lagrangian approach
+    nlopt::opt local;
+
 	double tolerance;
 	std::vector< double > EqTolerances;
 	std::vector< double > InEqTolerances;
@@ -61,7 +66,8 @@ public:
 				    optimizer(), S(s), 
                     E( boost::bind( &ScalarizationInterface::operator(), S, _1, _2 ) ), 
                     NA(E.objFunc, &S->EqualityConstraints, &S->InequalityConstraints, E.valid, fd_par ), 
-				    opt(nlopt::LD_SLSQP, S->dimDesign), tolerance(tolerance), 
+				    opt(nlopt::LD_SLSQP, S->dimDesign), tolerance(tolerance),
+                    //local(nlopt::LN_COBYLA, S->dimDesign), opt(nlopt::LD_AUGLAG, S->dimDesign), tolerance(tolerance), 
 				    EqTolerances(S->EqualityConstraints.size(), tolerance),
 				    InEqTolerances(S->InequalityConstraints.size(), tolerance){
 
@@ -70,13 +76,20 @@ public:
 	    //Boundary values
 	    if (!S->lowerBounds.empty()) opt.set_lower_bounds(S->lowerBounds);
 	    if (!S->upperBounds.empty()) opt.set_upper_bounds(S->upperBounds);
-	
+        
+
 	    //Set the stop conditions
 	    //this requires some attention
+
+        //local.set_xtol_abs(1e-6);
+        //local.set_ftol_abs(1e-6);
+
         opt.set_xtol_abs(tolerance);
         opt.set_ftol_abs(tolerance);
 	    //opt.set_xtol_rel(tolerance);
 	    //opt.set_ftol_rel(tolerance);
+
+        opt.set_local_optimizer( local );
 
 	    //Pass a scalarized function through the 
 	    //Nlopt Adapter to the Nlopt object
