@@ -9,10 +9,10 @@ namespace {
 
 	TEST(HOMOTOPY, 2D){
 		//Set up the problem
-		Problem::Interface * P = Problem::Factory("FON", 2, 3);
+		//Problem::Interface * P = Problem::Factory("FON", 2, 3);
 		//Problem::Interface * P = Problem::Factory("WFG5", 3, 30);
 		//Problem::Interface * P = Problem::Factory("DTLZ2", 3, 30);
-        //Problem::Interface * P = Problem::Factory("SURROGATE", 2, 2);
+        Problem::Interface * P = Problem::Factory("SURROGATE", 2, 2);
 
         //Set up the communication framework
         Homotopy::Communication::SimulatedRemote< functionSet_t > Comm( P->Objectives );
@@ -25,9 +25,9 @@ namespace {
             &Comm.comm_, _1, _2, _3 );*/
 
 		//Instantiate the homotopy
-		Pareto::homotopy h( P, 1e-3, 1e-6, Comm );
+		Pareto::homotopy h( P, 1e-6, 1e-6, Comm );
 
 		//Homotopically deform the ansatz
-		h.GetFront(19, 1, 0, 1);
+		h.GetFront(50, 5, 0, 1);
 	}
 }
