@@ -49,7 +49,8 @@ protected:
 		for(i=0;i<x1.size();i++){
 			sum += pow( x1[i] - x2[i], 2.0 );
 		}
-		return sqrt(sum);
+		//return sqrt(sum);
+        return sum;
 	}
 	virtual double eval(const std::vector< double > &x){
 		return L2Dist(*this->x1, x) - this->step;
