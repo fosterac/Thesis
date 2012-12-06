@@ -119,6 +119,12 @@ public:
             printf("WARNING: threw nlopt::roundoff_limited\n");
 		    result = ERROR;
 	    }
+        catch (const std::invalid_argument& ex) {
+            printf("WARNING: threw std::invalid_argument with %s\n input: ", ex.what());
+            for(int i=0;i<x.size();i++) printf("%lf ", x[i]);
+            printf("\n");
+		    result = ERROR;
+        }
 	    catch (const std::runtime_error& ex) {
             printf("WARNING: threw std::runtime with %s\n", ex.what());
 		    result = ERROR;
