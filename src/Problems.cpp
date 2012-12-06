@@ -251,6 +251,46 @@ public:
 	}
 };
 
+class MottaEx1 : public Problem::Interface{
+private:
+	double obj(const std::vector< double > &x, const int objNum){
+		return x[objNum];
+	}
+    double constr( const std::vector< double > &x, const int constrNum ){
+        int other1 = (constrNum + 1)%3;
+        int other2 = (constrNum + 2)%3;
+
+        return 1.0/x[other1] + 1.0 / x[other2] - x[constrNum];
+    }
+public:
+	MottaEx1(int DimObj, int DimDesign) {
+		this->dimObj = DimObj;
+		this->dimDesign = DimDesign;
+
+		int i;
+		for(i=0; i<dimObj; i++){
+            //bind the function
+			typename Problem::FUNCTION f( boost::bind(&MottaEx1::obj, this, _1, i) );
+            //export to function list
+			this->Objectives.push_back(	f );
+            //bind the function
+			typename Problem::FUNCTION g( boost::bind(&MottaEx1::constr, this, _1, i) );
+            //export to function list
+			this->InequalityConstraints.push_back(	g );
+		}
+
+        //param 1 limits
+        this->lowerBounds.push_back( 0.2 );
+		this->upperBounds.push_back( 10.0 );
+        //param 2 limits
+        this->lowerBounds.push_back( 0.2 );
+		this->upperBounds.push_back( 10.0 );
+        //param 3 limits
+        this->lowerBounds.push_back( 0.2 );
+		this->upperBounds.push_back( 10.0 );
+	}
+};
+
 Problem::Interface * Problem::Factory( std::string s, int DimObj, int DimDesign){
 	
 	Interface * toReturn = NULL;
@@ -294,6 +334,11 @@ Problem::Interface * Problem::Factory( std::string s, int DimObj, int DimDesign)
 		assert (DimObj <= 3);
 		assert (DimDesign == 2);
 		toReturn = new Surrogate(DimObj, DimDesign);
+	}
+    if ( s.compare(std::string("MOTTA1")) == 0 ){
+		assert (DimObj == 3);
+		assert (DimDesign == 3);
+		toReturn = new MottaEx1(DimObj, DimDesign);
 	}
 
 	return toReturn;
