@@ -163,6 +163,8 @@ namespace Homotopy {
             GroupCounts.clear();
             GroupToInd.clear();
         }
+
+        size_t Size(){ return job_id; }
     };
 
 }
