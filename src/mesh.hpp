@@ -109,12 +109,12 @@ namespace Mesh {
                 os << "\"ID\": " << mp.ID << " , " << std::endl;
                 int i;
                 for(i=0;i<mp.ObjectiveCoords.size();i++){
-                    os << "\"d" << i << "\": " << mp.ObjectiveCoords[i] << " , " << std::endl;
+                    os << "\"o" << i << "\": " << mp.ObjectiveCoords[i] << " , " << std::endl;
                 }
                 for(i=0;i<mp.DesignCoords.size()-1;i++){
-                    os << "\"o" << i << "\": " << mp.DesignCoords[i] << " , " << std::endl;
+                    os << "\"d" << i << "\": " << mp.DesignCoords[i] << " , " << std::endl;
                 }
-                os << "\"o" << i << "\": " << mp.DesignCoords[i] << std::endl;
+                os << "\"d" << i << "\": " << mp.DesignCoords[i] << std::endl;
                 os << "}" << std::endl;
 			}
 		};
