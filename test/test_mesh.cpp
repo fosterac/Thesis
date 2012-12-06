@@ -158,6 +158,7 @@ namespace {
 		Mesh::Simplex mesh( v, v, v, 5);
         mesh.Generate();
 		mesh.Print();
+        mesh.WriteOut( "1d.dat" );
 	}
 
 	//Build a 2D mesh (trianglar plane)
@@ -188,6 +189,7 @@ namespace {
 		Mesh::Simplex mesh( D, O, L, 3);
         mesh.Generate();
 		mesh.Print();
+        mesh.WriteOut( "2d.dat" );
 	}
 
 	//Build a 3D mesh (quarter pyramid)
@@ -218,6 +220,7 @@ namespace {
 		Mesh::Simplex mesh( D, O, L, 3);
         mesh.Generate();
 		mesh.Print();
+        mesh.WriteOut( "3d.dat" );
 	}
 
     TEST(SimplexNodeSetTest, One){

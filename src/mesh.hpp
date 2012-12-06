@@ -34,7 +34,7 @@ namespace Mesh {
         virtual void Generate() {};
         virtual void Refresh() {};
         virtual void Print() =0;
-        virtual void WriteOut( const char*, Output::MODE ) =0;
+        virtual void WriteOut( const char* ) =0;
     };
 
     typedef std::vector< double > point_t;
@@ -103,8 +103,19 @@ namespace Mesh {
 
 			//For outputting a meshpoint to the front file
 			friend std::ostream& operator<<(std::ostream& os, const MeshPoint& mp){
-				if( Output::mode == Output::MANIFOLD ) return os << mp.DesignCoords;
-                else return os << mp.ObjectiveCoords;
+				//if( Output::mode == Output::MANIFOLD ) return os << mp.DesignCoords;
+                //else return os << mp.ObjectiveCoords;
+                os << "{" << std::endl;
+                os << "\"ID\": " << mp.ID << " , " << std::endl;
+                int i;
+                for(i=0;i<mp.DesignCoords.size();i++){
+                    os << "\"d" << i << "\": " << mp.DesignCoords[i] << " , " << std::endl;
+                }
+                for(i=0;i<mp.ObjectiveCoords.size()-1;i++){
+                    os << "\"o" << i << "\": " << mp.ObjectiveCoords[i] << " , " << std::endl;
+                }
+                os << "\"o" << i << "\": " << mp.ObjectiveCoords[i] << std::endl;
+                os << "}" << std::endl;
 			}
 		};
 
@@ -205,14 +216,12 @@ namespace Mesh {
 			printf("Points: \n");
 			for(i=0;i<Points.size();i++) Points[i].Print();
 		}
-        void WriteOut(const char* filename, Output::MODE m) {
-            //Different roles depending out what we're outputting
-            Output::mode = m;
-            int numcols = (Output::mode == Output::FRONT)?this->ObjectiveDim:this->DesignDim;
+        void WriteOut(const char* filename ) {
 
 			std::ofstream os( filename );
 			os << "{" << std::endl;
 
+            /*
 			std::vector<std::string> cols;
 			int i;
 			for(i=0;i<numcols;i++) {
@@ -221,8 +230,11 @@ namespace Mesh {
 				cols.push_back( std::string( s.str() ) );
 			}
 			os << "\"columns\" : " << cols << "," << std::endl;
+            */
 
-			os << "\"data\" : ";
+            os << "\"name\" : \"opt-pilot v0.1\"," << std::endl;
+
+			os << "\"solutions\" : ";
 			os << this->Points;
 
 			os << "}" << std::endl;
@@ -675,10 +687,10 @@ namespace Mesh {
         void WriteOut() {
             std::ostringstream fout;
             fout << "front." << this->ID;
-            MeshBase::WriteOut( fout.str().c_str(), Output::FRONT );
+            MeshBase::WriteOut( fout.str().c_str() );
             std::ostringstream mout;
             mout << "manifold." << this->ID;
-            MeshBase::WriteOut( mout.str().c_str(), Output::MANIFOLD );
+            MeshBase::WriteOut( mout.str().c_str() );
         }
     };
 }
