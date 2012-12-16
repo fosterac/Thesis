@@ -138,7 +138,7 @@ namespace Pareto {
         bool UsePreProjection;
 
         homotopy( Problem::Interface *P, double tolerance, double fd_step, Communication::Interface & c) : Prob(P), Comm( c ), Queue( Comm ), Scal( Prob, Queue ), 
-tolerance(tolerance), fd_step(1e-6), fd_type(FiniteDifferences::CENTRAL), Opt( NULL ){
+tolerance(tolerance), fd_step(fd_step), fd_type(FiniteDifferences::CENTRAL), Opt( NULL ){
 			this->GetCorners();
             this->UsePreProjection = false;
 		}
