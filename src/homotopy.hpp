@@ -46,8 +46,8 @@ namespace Pareto {
         
 
         //Default values
-        static const double FDstep = 1e-6;
-        static const FiniteDifferences::FD_TYPE FDtype = FiniteDifferences::CENTRAL ;
+        //const double FDstep = 1e-6;
+        //const FiniteDifferences::FD_TYPE FDtype = FiniteDifferences::CENTRAL ;
 
 		//For holding the mesh corners
 		std::vector< std::vector< double > > Design;
@@ -102,6 +102,7 @@ namespace Pareto {
                 int j;
                 for(j=0; j<Prob->dimDesign; j++){
                     start[j] = (Prob->upperBounds[j] - Prob->lowerBounds[j])/2.0 + Prob->lowerBounds[j];
+                    //start[j] = (Prob->upperBounds[j] - Prob->lowerBounds[j])/1.5 + Prob->lowerBounds[j];
                 }
 
                 std::vector<double> x(start);
@@ -136,7 +137,8 @@ namespace Pareto {
         FiniteDifferences::FD_TYPE fd_type;
         bool UsePreProjection;
 
-        homotopy( Problem::Interface *P, double tolerance, double fd_step, Communication::Interface & c) : Prob(P), Comm( c ), Queue( Comm ), Scal( Prob, Queue ), tolerance(tolerance), fd_step(FDstep), fd_type(FDtype), Opt( NULL ){
+        homotopy( Problem::Interface *P, double tolerance, double fd_step, Communication::Interface & c) : Prob(P), Comm( c ), Queue( Comm ), Scal( Prob, Queue ), 
+tolerance(tolerance), fd_step(1e-6), fd_type(FiniteDifferences::CENTRAL), Opt( NULL ){
 			this->GetCorners();
             this->UsePreProjection = false;
 		}

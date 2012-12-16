@@ -54,10 +54,13 @@ public:
         nl->Validity = true;
 
         //Evaluate objectives and gradient
+		double result = eval(nl->obj, x);
+
 		if(!grad.empty()){
             FiniteDifferences::GradEval<std::vector<double> &, T>(grad, nl->obj,  x,  nl->fd_params );
 		}
-		double result = eval(nl->obj, x);
+		//double result = eval(nl->obj, x);
+
 
         //If all the evaluations weren't valid
         //force stop the evaluator

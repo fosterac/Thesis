@@ -139,10 +139,13 @@ namespace Homotopy {
             while( nextInd < 0 ){
                 std::queue< std::pair< jobid_t, objVars_t> > results;
                 RemoteEvaluator.collect( results );
+		if(results.size() > 0 ) printf("Collected %d results\n", results.size() );
 
                 while( !results.empty() ){
                     std::pair< jobid_t, objVars_t> &p( results.front() );
                     this->AcceptJob( p.first, p.second );
+			printf("Accepted a result\n");
+
                     results.pop();
                 }
 
