@@ -12,7 +12,8 @@ namespace {
 		//Problem::Interface * P = Problem::Factory("FON", 2, 3);
 		//Problem::Interface * P = Problem::Factory("WFG5", 3, 30);
 		//Problem::Interface * P = Problem::Factory("DTLZ2", 3, 30);
-        Problem::Interface * P = Problem::Factory("SURROGATE", 2, 2);
+        //Problem::Interface * P = Problem::Factory("SURROGATE", 3, 2);
+        Problem::Interface * P = Problem::Factory("MOTTA1", 3, 3);
 
         //Set up the communication framework
         Homotopy::Communication::SimulatedRemote< functionSet_t > Comm( P->Objectives );
@@ -25,9 +26,9 @@ namespace {
             &Comm.comm_, _1, _2, _3 );*/
 
 		//Instantiate the homotopy
-		Pareto::homotopy h( P, 1e-6, 1e-6, Comm );
+		Pareto::homotopy h( P, 1e-3, 1e-6, Comm );
 
 		//Homotopically deform the ansatz
-		h.GetFront(50, 5, 0, 1);
+		h.GetFront(15, 10, 0, 1);
 	}
 }
