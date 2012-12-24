@@ -46,8 +46,10 @@ namespace Pareto {
         
 
         //Default values
-        static const double FDstep = 1e-6;
-        static const FiniteDifferences::FD_TYPE FDtype = FiniteDifferences::CENTRAL ;
+        //static const double FDstep = 1e-6;
+        //static const FiniteDifferences::FD_TYPE FDtype = FiniteDifferences::CENTRAL ;
+        static constexpr double FDstep = 1e-6;
+        static constexpr FiniteDifferences::FD_TYPE FDtype = FiniteDifferences::CENTRAL ;
 
 		//For holding the mesh corners
 		std::vector< std::vector< double > > Design;
@@ -130,6 +132,16 @@ namespace Pareto {
                 this->Queue.Clear();
                 delete op;
 			}
+            std::vector< double > v(3, 10.0);
+            v[0] = .2;
+            this->Design[0] = v;
+            this->Objective[0] = v;
+            v[0]=10.0; v[1] = .2;
+            this->Design[1] = v;
+            this->Objective[1] = v;
+            v[1]=10.0; v[2] = .2;
+            this->Design[2] = v;
+            this->Objective[2] = v;
         }
 
 	public:
@@ -138,7 +150,8 @@ namespace Pareto {
 
         homotopy( Problem::Interface *P, double tolerance, double fd_step, Communication::Interface & c) : Prob(P), Comm( c ), Queue( Comm ), Scal( Prob, Queue ), tolerance(tolerance), fd_step(FDstep), fd_type(FDtype), Opt( NULL ){
 			this->GetCorners();
-            this->UsePreProjection = false;
+            //Default values
+            UsePreProjection = false;
 		}
 
         homotopy(   Problem::Interface *P, double tolerance, double fd_step, Communication::Interface & c,
@@ -202,6 +215,7 @@ namespace Pareto {
 
 			//Construct optimizer
 			this->Opt = new OptNlopt(&Scal, tolerance, FDpar);
+            size_t evals = 0;
 
 			//Run a set of updates
 			int j;
@@ -250,12 +264,16 @@ namespace Pareto {
                         //Again, do we have everything?
 				        alldone = ( std::find( flags.begin(), flags.end(), false ) == flags.end() );
 				    }
+
+                    evals += Queue.Size();
                 }
 			}
-			delete this->Opt;
+			delete this->Opt;    
 
 			mesh.Print();
             mesh.WriteOut();
+
+            printf("Evaluations: %d\n", evals );
 		}
 
         optimizer::EXIT_COND RefinePoint( int i, optimizer * opt, Mesh::MeshBase &mesh, std::vector< FunctionSpaceEqDistConstr * > &NeighborConstraints ) {
