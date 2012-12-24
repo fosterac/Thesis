@@ -141,6 +141,20 @@ namespace Pareto {
             this->UsePreProjection = false;
 		}
 
+        homotopy(   Problem::Interface *P, double tolerance, double fd_step, Communication::Interface & c,
+                    std::vector< designVars_t > designCorners,
+                    std::vector< objVars_t > objectiveCorners,
+                    std::vector< objVars_t > lambdaCorners ) : 
+                    Prob(P), Comm( c ), Queue( Comm ), Scal( Prob, Queue ), tolerance(tolerance), fd_step(FDstep), fd_type(FDtype), Opt( NULL ),
+                    {
+            this->UsePreProjection = false;
+
+            //Cache the corner data
+			this->Design.assign( designCorners.begin(), designCorners.end() ) ;
+			this->Objective.assign( objectiveCorners.begin(), objectiveCorners.end() ) ;
+			this->Lambda.assign( lambdaCorners.begin(), lambdaCorners.end() ) ;
+        }
+
         typedef FEqDistanceConstraint< boost::function<objVars_t (const designVars_t&)> > FunctionSpaceEqDistConstr;
 		void GetFront(int NumPoints, int Iterations, int id, int worldSize){
 			
