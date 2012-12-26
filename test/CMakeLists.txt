@@ -142,3 +142,12 @@ add_test(
     NAME testOptimizerDetail
     COMMAND testOptimizerDetail
 )
+
+add_executable(testBenchmarks
+    test_benchmarks.cpp
+)
+target_link_libraries(testBenchmarks gtest gtest_main nlopt Problems )
+add_test(
+    NAME testBenchmarks
+    COMMAND testBenchmarks
+)
