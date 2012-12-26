@@ -60,18 +60,8 @@ private:
 	std::vector< double > EqTolerances;
 	std::vector< double > InEqTolerances;
 
-public:
-
-    OptNlopt(ScalarizationInterface *s, double tolerance, FiniteDifferences::Params_t fd_par) : 
-				    optimizer(), S(s), 
-                    E( boost::bind( &ScalarizationInterface::operator(), S, _1, _2 ) ), 
-                    NA(E.objFunc, &S->EqualityConstraints, &S->InequalityConstraints, E.valid, fd_par ), 
-				    opt(nlopt::LD_SLSQP, S->dimDesign), tolerance(tolerance),
-                    //local(nlopt::LN_COBYLA, S->dimDesign), opt(nlopt::LD_AUGLAG, S->dimDesign), tolerance(tolerance), 
-				    EqTolerances(S->EqualityConstraints.size(), tolerance),
-				    InEqTolerances(S->InequalityConstraints.size(), tolerance){
-
-	    //Set the state of the optimizer:
+    void initialize(){
+        //Set the state of the optimizer:
 	
 	    //Boundary values
 	    if (!S->lowerBounds.empty()) opt.set_lower_bounds(S->lowerBounds);
@@ -81,15 +71,15 @@ public:
 	    //Set the stop conditions
 	    //this requires some attention
 
-        //local.set_xtol_abs(1e-6);
-        //local.set_ftol_abs(1e-6);
+        //Local optimizer settings
+        //local.set_xtol_abs(1e-3);
+        //local.set_ftol_abs(1e-3);
+        //opt.set_local_optimizer( local );
 
         opt.set_xtol_abs(tolerance);
         opt.set_ftol_abs(tolerance);
 	    //opt.set_xtol_rel(tolerance);
 	    //opt.set_ftol_rel(tolerance);
-
-        opt.set_local_optimizer( local );
 
 	    //Pass a scalarized function through the 
 	    //Nlopt Adapter to the Nlopt object
@@ -102,6 +92,30 @@ public:
 	    if ( !S->InequalityConstraints.empty() ) {
 		    opt.add_inequality_mconstraint(&NloptAdapt< typename Problem::FUNCTION >::InEqConstrIface, (void*)(&(this->NA)), this->InEqTolerances);
 	    }
+    }
+
+public:
+    //Using SLSQP as the default optimization algorithm
+    OptNlopt(ScalarizationInterface *s, double tolerance, FiniteDifferences::Params_t fd_par) : 
+				    optimizer(), S(s), 
+                    E( boost::bind( &ScalarizationInterface::operator(), S, _1, _2 ) ), 
+                    NA(E.objFunc, &S->EqualityConstraints, &S->InequalityConstraints, E.valid, fd_par ), tolerance(tolerance),
+				    opt(nlopt::LD_SLSQP, S->dimDesign), 
+				    EqTolerances(S->EqualityConstraints.size(), tolerance),
+				    InEqTolerances(S->InequalityConstraints.size(), tolerance){
+
+	    this->initialize();
+    }
+    OptNlopt(ScalarizationInterface *s, double tolerance, FiniteDifferences::Params_t fd_par, nlopt::algorithm alg) : 
+				    optimizer(), S(s), 
+                    E( boost::bind( &ScalarizationInterface::operator(), S, _1, _2 ) ), 
+                    NA(E.objFunc, &S->EqualityConstraints, &S->InequalityConstraints, E.valid, fd_par ), tolerance(tolerance),
+				    opt(alg, S->dimDesign), 
+                    //local(nlopt::LN_COBYLA, S->dimDesign), opt(nlopt::LD_AUGLAG, S->dimDesign),
+				    EqTolerances(S->EqualityConstraints.size(), tolerance),
+				    InEqTolerances(S->InequalityConstraints.size(), tolerance){
+
+	    this->initialize();
     }
 
 	int RunFrom(std::vector< double > &x) {

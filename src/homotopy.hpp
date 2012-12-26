@@ -39,6 +39,9 @@ namespace Pareto {
         typedef Evaluator< EvaluationStrategy::Cached< EvaluationStrategy::ReferenceTo < queue_t > > > eval_t;
 
         DynamicScalarization< eval_t > Scal;
+
+        typedef FEqDistanceConstraint< boost::function<objVars_t (const designVars_t&)> > FunctionSpaceEqDistConstr;
+
 		optimizer * Opt;
 
 		double tolerance;
@@ -48,8 +51,6 @@ namespace Pareto {
         //Default values
         //static const double FDstep = 1e-6;
         //static const FiniteDifferences::FD_TYPE FDtype = FiniteDifferences::CENTRAL ;
-        static constexpr double FDstep = 1e-6;
-        static constexpr FiniteDifferences::FD_TYPE FDtype = FiniteDifferences::CENTRAL ;
 
 		//For holding the mesh corners
 		std::vector< std::vector< double > > Design;
@@ -84,9 +85,9 @@ namespace Pareto {
         }
 
         void GetCorners(){
+
             //Find the individual optimae using a fixed scalarization
             FixedScalarization< eval_t > S(Prob, Queue);
-            //FixedScalarization< Evaluator< EvaluationStrategy::Local< functionSet_t > > > S(Prob, Prob->Objectives);
 
             //Establish finite difference parameters
             FiniteDifferences::Params_t FDpar = { this->fd_step, this->fd_type };
@@ -94,7 +95,12 @@ namespace Pareto {
 			int i;
 			for( i=0; i<Prob->dimObj; i++){
 
-                optimizer * op = new OptNlopt( &S, tolerance, FDpar);
+                //We're trying to find a global minimum here, so use a coarser technique
+                optimizer * op = new OptNlopt( &S, tolerance, FDpar, nlopt::LN_COBYLA );
+                //optimizer * op = new OptNlopt( &S, tolerance, FDpar);
+                
+                //Possibly refine the minimum using a derivative-based local method
+                //optimizer * fine = new OptNlopt( &S, tolerance, FDpar, nlopt::LD_SLSQP );
 
 				//Optimize the objective
 				std::vector<double> lam(Prob->dimObj, 0.0);
@@ -132,35 +138,30 @@ namespace Pareto {
                 this->Queue.Clear();
                 delete op;
 			}
-            std::vector< double > v(3, 10.0);
-            v[0] = .2;
-            this->Design[0] = v;
-            this->Objective[0] = v;
-            v[0]=10.0; v[1] = .2;
-            this->Design[1] = v;
-            this->Objective[1] = v;
-            v[1]=10.0; v[2] = .2;
-            this->Design[2] = v;
-            this->Objective[2] = v;
+        }
+        void SetDefaults(){
+            //Default values
+            this->fd_type = FiniteDifferences::CENTRAL;
+            this->UsePreProjection = false;
         }
 
 	public:
         FiniteDifferences::FD_TYPE fd_type;
         bool UsePreProjection;
 
-        homotopy( Problem::Interface *P, double tolerance, double fd_step, Communication::Interface & c) : Prob(P), Comm( c ), Queue( Comm ), Scal( Prob, Queue ), tolerance(tolerance), fd_step(FDstep), fd_type(FDtype), Opt( NULL ){
-			this->GetCorners();
-            //Default values
-            UsePreProjection = false;
+        homotopy( Problem::Interface *P, double tolerance, double fd_step, Communication::Interface & c) : Prob(P), Comm( c ), Queue( Comm ), Scal( Prob, Queue ), tolerance(tolerance), fd_step(fd_step), Opt( NULL ){
+			this->SetDefaults();
+            this->GetCorners();
 		}
 
         homotopy(   Problem::Interface *P, double tolerance, double fd_step, Communication::Interface & c,
                     std::vector< designVars_t > designCorners,
                     std::vector< objVars_t > objectiveCorners,
                     std::vector< objVars_t > lambdaCorners ) : 
-                    Prob(P), Comm( c ), Queue( Comm ), Scal( Prob, Queue ), tolerance(tolerance), fd_step(FDstep), fd_type(FDtype), Opt( NULL ),
+                    Prob(P), Comm( c ), Queue( Comm ), Scal( Prob, Queue ), tolerance(tolerance), fd_step(fd_step), Opt( NULL ) 
                     {
-            this->UsePreProjection = false;
+
+            this->SetDefaults();
 
             //Cache the corner data
 			this->Design.assign( designCorners.begin(), designCorners.end() ) ;
@@ -168,7 +169,6 @@ namespace Pareto {
 			this->Lambda.assign( lambdaCorners.begin(), lambdaCorners.end() ) ;
         }
 
-        typedef FEqDistanceConstraint< boost::function<objVars_t (const designVars_t&)> > FunctionSpaceEqDistConstr;
 		void GetFront(int NumPoints, int Iterations, int id, int worldSize){
 			
             //Get the list of ID's this instance is responsible for
