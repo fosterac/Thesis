@@ -22,8 +22,12 @@ namespace {
         for( int i=0; i<v.size(); i++) { printf("%lf ", v[i]); }
         printf("\n");
     }
+    void Print2( std::vector< double > v ){
+        for( int i=0; i<v.size(); i++) { printf("%lf ", v[i]); }
+        
+    }
 
-	TEST(OPTIMIZERDETAIL, FON){
+	TEST(OPTIMIZERDETAIL, DISABLED_FON){
 		//Set up the problem
 		Problem::Interface * P = Problem::Factory("FON", 2, 3);
 		//Problem::Interface * P = Problem::Factory("WFG5", 3, 30);
@@ -123,6 +127,41 @@ namespace {
         while (x < 1.0){
             std::vector< double > v(3, x);
             printf("%lf %lf\n", x, (P->Objectives[0])( v ) );
+            x += step;
+        }
+    }
+
+    TEST(OPTIMIZERDETAIL, WFG5probe){
+
+        Problem::Interface * P = Problem::Factory("WFG5", 3, 3);
+
+        //Establish finite difference parameters
+        FiniteDifferences::Params_t FDpar = { 1e-6, FiniteDifferences::FORWARD };
+        FixedScalarization< eval_t > Scal( P, P->Objectives );
+
+        std::vector< double > w (3, 0.0);
+        w[2] = 1.0;
+        Scal.SetWeights( &w );
+
+        double x = 0.001;
+        double step = 5e-2;
+
+        while (x < 1.0){
+            std::vector< double > v(3, x);
+            Print2(v);
+            
+            //OptNlopt opt( &Scal, 1e-3, FDpar, nlopt::GN_ISRES );
+            OptNlopt opt( &Scal, 1e-6, FDpar, nlopt::LN_COBYLA );
+            opt.RunFrom(v);
+
+            std::vector<double> f;
+            f.push_back( (P->Objectives[0])( v ) );
+            f.push_back( (P->Objectives[1])( v ) );
+            f.push_back( (P->Objectives[2])( v ) );
+
+            printf(" -> ");
+            Print2(f);
+            printf("\n");
             x += step;
         }
     }
