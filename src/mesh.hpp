@@ -24,7 +24,7 @@ namespace Mesh {
     struct Output{
     public:
         //Control front/manifold output modes
-        enum MODE {FRONT, MANIFOLD};
+        enum MODE {DEFAULT, FRONT};
         static MODE mode;
     };
     Output::MODE Output::mode;
@@ -44,7 +44,8 @@ namespace Mesh {
 	//Basic function for outputting vector to a stream
 	template< typename T>
 	std::ostream& operator<<(std::ostream& os, const std::vector<T>& vec){
-        if( Output::mode == Output::DEFAULT) {
+        if( 1 ) {
+        //if( Output::mode == Output::DEFAULT) {
 		    os << "[ " ;
 		    int i;
 		    for(i=0;i<vec.size()-1;i++){ os << vec[i];
