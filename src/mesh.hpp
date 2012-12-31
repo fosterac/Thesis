@@ -44,10 +44,19 @@ namespace Mesh {
 	//Basic function for outputting vector to a stream
 	template< typename T>
 	std::ostream& operator<<(std::ostream& os, const std::vector<T>& vec){
-		os << "[ " ;
-		int i;
-		for(i=0;i<vec.size()-1;i++){ os << vec[i] << ", " ;	}
-		return os << vec[i] << " ]" ;
+        if( Output::mode == Output::DEFAULT) {
+		    os << "[ " ;
+		    int i;
+		    for(i=0;i<vec.size()-1;i++){ os << vec[i];
+                                        os << ", " ;	}
+            os << vec[i] << " ]" ;
+        }
+        else{
+            int i;
+		    for(i=0;i<vec.size();i++){ os << vec[i] ;
+                                        os << std::endl ;	}
+        }
+        return os;
 	}
 
 //Dis/Enable synchronous mesh updates
