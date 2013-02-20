@@ -159,7 +159,7 @@ public:
 			//so we perturb it to allow the central difference
 			//scheme to work.
 			//this->lowerBounds.push_back( 0.0 );
-			this->lowerBounds.push_back( 1e-3 );
+			this->lowerBounds.push_back( 2e-6 );
 			this->upperBounds.push_back( 1.0 );
 		}
 	}
@@ -251,6 +251,187 @@ public:
 	}
 };
 
+class MottaEx1 : public Problem::Interface{
+private:
+	double obj(const std::vector< double > &x, const int objNum){
+		return x[objNum];
+	}
+    double constr( const std::vector< double > &x, const int constrNum ){
+        int other1 = (constrNum + 1)%3;
+        int other2 = (constrNum + 2)%3;
+
+        return 1.0/x[other1] + 1.0 / x[other2] - x[constrNum];
+    }
+public:
+	MottaEx1(int DimObj, int DimDesign) {
+		this->dimObj = DimObj;
+		this->dimDesign = DimDesign;
+
+		int i;
+		for(i=0; i<dimObj; i++){
+            //bind the function
+			typename Problem::FUNCTION f( boost::bind(&MottaEx1::obj, this, _1, i) );
+            //export to function list
+			this->Objectives.push_back(	f );
+            //bind the function
+			typename Problem::FUNCTION g( boost::bind(&MottaEx1::constr, this, _1, i) );
+            //export to function list
+			this->InequalityConstraints.push_back(	g );
+		}
+
+        //param 1 limits
+        this->lowerBounds.push_back( 0.2 );
+		this->upperBounds.push_back( 10.0 );
+        //param 2 limits
+        this->lowerBounds.push_back( 0.2 );
+		this->upperBounds.push_back( 10.0 );
+        //param 3 limits
+        this->lowerBounds.push_back( 0.2 );
+		this->upperBounds.push_back( 10.0 );
+	}
+};
+
+class MottaEx2 : public Problem::Interface{
+private:
+	double obj(const std::vector< double > &x, const int objNum){
+		if(objNum==0) return x[0]*x[0]*x[0] + x[1] + 2*x[2];
+        if(objNum==1) return x[0] + x[1]*x[1]*x[1] + 2*x[2];
+        if(objNum==2) return -x[0]*x[1]*x[2];
+	}
+    double constr( const std::vector< double > &x, const int constrNum ){
+        if(constrNum==0) return x[0]*x[0] + x[1]*x[1] - x[2] - 5;
+        if(constrNum==1) return -5*(x[0] + x[1]) + x[2];
+    }
+public:
+	MottaEx2(int DimObj, int DimDesign) {
+		this->dimObj = DimObj;
+		this->dimDesign = DimDesign;
+
+		int i;
+		for(i=0; i<dimObj; i++){
+            //bind the function
+			typename Problem::FUNCTION f( boost::bind(&MottaEx2::obj, this, _1, i) );
+            //export to function list
+			this->Objectives.push_back(	f );
+		}
+        
+		for(i=0; i<2; i++){
+            //bind the function
+			typename Problem::FUNCTION g( boost::bind(&MottaEx2::constr, this, _1, i) );
+            //export to function list
+			this->InequalityConstraints.push_back(	g );
+		}
+
+        //param 1 limits
+        this->lowerBounds.push_back( 0.0 );
+		this->upperBounds.push_back( 100.0 );
+        //param 2 limits
+        this->lowerBounds.push_back( 0.0 );
+		this->upperBounds.push_back( 100.0 );
+        //param 3 limits
+        this->lowerBounds.push_back( 0.0 );
+		this->upperBounds.push_back( 100.0 );
+	}
+};
+
+class MottaEx3 : public Problem::Interface{
+private:
+    double a[2];
+    double b[2];
+    double c[2];
+    double d[2];
+    
+    double dist(std::vector<double> x, double* p) {
+        return sqrt( (x[0] - p[0])*(x[0] - p[0]) + (x[1] - p[1])*(x[1] - p[1]) );
+    }
+
+	double obj(const std::vector< double > &x, const int objNum){
+		if(objNum==0) return dist(x, a);
+        if(objNum==1) return dist(x, b);
+        if(objNum==2) return dist(x, c);
+	}
+    double constr( const std::vector< double > &x, const int constrNum ){
+        return -dist(x, d) + .5;
+    }
+public:
+	MottaEx3(int DimObj, int DimDesign) {
+		this->dimObj = DimObj;
+		this->dimDesign = DimDesign;
+
+        a[0]=0;a[1]=0;
+        b[0]=0;b[1]=1;
+        c[0]=1;c[1]=0;
+        d[0]=1;d[1]=0.4;
+
+
+		int i;
+		for(i=0; i<dimObj; i++){
+            //bind the function
+			typename Problem::FUNCTION f( boost::bind(&MottaEx3::obj, this, _1, i) );
+            //export to function list
+			this->Objectives.push_back(	f );
+		}
+        
+		for(i=0; i<1; i++){
+            //bind the function
+			typename Problem::FUNCTION g( boost::bind(&MottaEx3::constr, this, _1, i) );
+            //export to function list
+			this->InequalityConstraints.push_back(	g );
+		}
+
+        //param 1 limits
+        this->lowerBounds.push_back( 0.0 );
+		this->upperBounds.push_back( 1.0 );
+        //param 2 limits
+        this->lowerBounds.push_back( 0 );
+		this->upperBounds.push_back( 1.0 );
+	}
+};
+
+class MottaEx4 : public Problem::Interface{
+private:
+	double obj(const std::vector< double > &x, const int objNum){
+		return x[objNum];
+	}
+    double constr( const std::vector< double > &x, const int constrNum ){
+        int other1 = (constrNum + 1)%4;
+        int other2 = (constrNum + 2)%4;
+        int other3 = (constrNum + 3)%4;
+
+        return 1.0/x[other1] + 1.0 / x[other2] + 1.0 / x[other3] - x[constrNum];
+    }
+public:
+	MottaEx4(int DimObj, int DimDesign) {
+		this->dimObj = DimObj;
+		this->dimDesign = DimDesign;
+
+		int i;
+		for(i=0; i<dimObj; i++){
+            //bind the function
+			typename Problem::FUNCTION f( boost::bind(&MottaEx4::obj, this, _1, i) );
+            //export to function list
+			this->Objectives.push_back(	f );
+            //bind the function
+			typename Problem::FUNCTION g( boost::bind(&MottaEx4::constr, this, _1, i) );
+            //export to function list
+			this->InequalityConstraints.push_back(	g );
+		}
+
+        //param 1 limits
+        this->lowerBounds.push_back( 0.2 );
+		this->upperBounds.push_back( 10.0 );
+        //param 2 limits
+        this->lowerBounds.push_back( 0.2 );
+		this->upperBounds.push_back( 10.0 );
+        //param 3 limits
+        this->lowerBounds.push_back( 0.2 );
+		this->upperBounds.push_back( 10.0 );
+        //param 4 limits
+        this->lowerBounds.push_back( 0.2 );
+		this->upperBounds.push_back( 10.0 );
+	}
+};
+
 Problem::Interface * Problem::Factory( std::string s, int DimObj, int DimDesign){
 	
 	Interface * toReturn = NULL;
@@ -295,6 +476,25 @@ Problem::Interface * Problem::Factory( std::string s, int DimObj, int DimDesign)
 		assert (DimDesign == 2);
 		toReturn = new Surrogate(DimObj, DimDesign);
 	}
-
+    if ( s.compare(std::string("MOTTA1")) == 0 ){
+		assert (DimObj == 3);
+		assert (DimDesign == 3);
+		toReturn = new MottaEx1(DimObj, DimDesign);
+	}
+    if ( s.compare(std::string("MOTTA2")) == 0 ){
+		assert (DimObj == 3);
+		assert (DimDesign == 3);
+		toReturn = new MottaEx2(DimObj, DimDesign);
+	}
+    if ( s.compare(std::string("MOTTA3")) == 0 ){
+		assert (DimObj == 3);
+		assert (DimDesign == 2);
+		toReturn = new MottaEx3(DimObj, DimDesign);
+	}
+    if ( s.compare(std::string("MOTTA4")) == 0 ){
+		assert (DimObj == 4);
+		assert (DimDesign == 4);
+		toReturn = new MottaEx4(DimObj, DimDesign);
+	}
 	return toReturn;
 }
