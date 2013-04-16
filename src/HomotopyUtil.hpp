@@ -12,7 +12,7 @@ namespace Homotopy {
     namespace Util {
         namespace Matrix {
 
-            std::vector< std::vector< double > > readCSV( const std::string name, const size_t rows, const size_t cols ){
+            std::vector< std::vector< double > > readCSV( const std::string name, const size_t rows ){
                 
                 std::vector< std::vector< double > > data;
                 
@@ -32,6 +32,9 @@ namespace Homotopy {
                         }
                     }
                     myfile.close();
+
+                    //Infer the number of columns
+                    size_t cols = entries.size() / rows;
 
                     for(size_t i=0; i<rows; i++){
                         std::vector< double > row;
