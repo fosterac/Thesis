@@ -1,6 +1,7 @@
 #include <algorithm>
 
 #include "HomotopyTypes.h"
+#include "HomotopyUtil.hpp"
 
 //Problem API
 #include "Problems.h"
@@ -144,6 +145,14 @@ namespace Pareto {
             this->fd_type = FiniteDifferences::CENTRAL;
             this->UsePreProjection = false;
         }
+        void SetCorners(std::vector< designVars_t > designCorners,
+                        std::vector< objVars_t > objectiveCorners,
+                        std::vector< objVars_t > lambdaCorners ) {
+            //Cache the corner data
+			this->Design.assign( designCorners.begin(), designCorners.end() ) ;
+			this->Objective.assign( objectiveCorners.begin(), objectiveCorners.end() ) ;
+			this->Lambda.assign( lambdaCorners.begin(), lambdaCorners.end() ) ;
+        }
 
 	public:
         FiniteDifferences::FD_TYPE fd_type;
@@ -162,11 +171,20 @@ namespace Pareto {
                     {
 
             this->SetDefaults();
+            this->SetCorners( designCorners, objectiveCorners, lambdaCorners );
+        }
 
-            //Cache the corner data
-			this->Design.assign( designCorners.begin(), designCorners.end() ) ;
-			this->Objective.assign( objectiveCorners.begin(), objectiveCorners.end() ) ;
-			this->Lambda.assign( lambdaCorners.begin(), lambdaCorners.end() ) ;
+        homotopy( Problem::Interface *P, double tolerance, double fd_step, Communication::Interface & c, std::string CornerFile ) :
+                    Prob(P), Comm( c ), Queue( Comm ), Scal( Prob, Queue ), tolerance(tolerance), fd_step(fd_step), Opt( NULL )
+        {
+            this->SetDefaults();
+
+            std::vector< designVars_t > designCorners;
+            std::vector< objVars_t > objectiveCorners;
+
+            Util::Matrix::SplitAtCol( Util::Matrix::readCSV( CornerFile, P->dimObj, P->dimDesign ), P->dimObj, objectiveCorners, designCorners );
+
+            this->SetCorner( designCorners, objectiveCorners, Util::Matrix::GetEye( P->dimObj ) );
         }
 
 		void GetFront(int NumPoints, int Iterations, int id, int worldSize){
