@@ -182,9 +182,9 @@ namespace Pareto {
             std::vector< designVars_t > designCorners;
             std::vector< objVars_t > objectiveCorners;
 
-            Util::Matrix::SplitAtCol( Util::Matrix::readCSV( CornerFile, P->dimObj, P->dimDesign ), P->dimObj, objectiveCorners, designCorners );
+            Util::Matrix::SplitAtCol( Util::Matrix::readCSV( CornerFile, P->dimObj, P->dimDesign + P->dimObj ), P->dimObj, objectiveCorners, designCorners );
 
-            this->SetCorner( designCorners, objectiveCorners, Util::Matrix::GetEye( P->dimObj ) );
+            this->SetCorners( designCorners, objectiveCorners, Util::Matrix::GetEye( P->dimObj ) );
         }
 
 		void GetFront(int NumPoints, int Iterations, int id, int worldSize){
