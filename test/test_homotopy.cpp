@@ -7,7 +7,7 @@
 
 namespace {
 
-	TEST(HOMOTOPY, 2D){
+	TEST(HOMOTOPY, DISABLED_2D){
 		//Set up the problem
 		//Problem::Interface * P = Problem::Factory("FON", 2, 3);
 		//Problem::Interface * P = Problem::Factory("WFG5", 3, 30);
@@ -30,5 +30,20 @@ namespace {
 
 		//Homotopically deform the ansatz
 		h.GetFront(15, 10, 0, 1);
+	}
+
+    TEST(HOMOTOPY, CornerFile ){
+        Problem::Interface * P = Problem::Factory("DTLZ2", 3, 3);
+
+        //Set up the communication framework
+        Homotopy::Communication::SimulatedRemote< functionSet_t > Comm( P->Objectives );
+
+		//Instantiate the homotopy
+		Pareto::homotopy h( P, 1e-3, 1e-6, Comm, "./data/corners.csv" );
+        //Pareto::homotopy h( P, 1e-3, 1e-6, Comm );
+        h.fd_type = FiniteDifferences::FORWARD;
+
+		//Homotopically deform the ansatz
+		h.GetFront(3, 5, 0, 1);
 	}
 }
