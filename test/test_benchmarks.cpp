@@ -14,11 +14,11 @@ namespace {
         Problem::Interface * P = Problem::Factory("FON", 2, 3);
 
         //Set up the communication framework
-        Homotopy::Communication::SimulatedRemote< functionSet_t > Comm( P->Objectives );
+        Homotopy::Communication::SimulatedRemote< Homotopy::functionSet_t > Comm( P->Objectives );
 
 		//Instantiate the homotopy
-        Pareto::homotopy h( P, 1e-3, 1e-6, Comm );
-        h.fd_type = FiniteDifferences::FORWARD;
+        Homotopy::homotopy h( P, 1e-3, 1e-6, Comm );
+        h.fd_type = Homotopy::FiniteDifferences::FORWARD;
 
 		//Homotopically deform the ansatz
 		h.GetFront(15, 1, 0, 1);
@@ -28,11 +28,11 @@ namespace {
         Problem::Interface * P = Problem::Factory("MOTTA1", 3, 3);
 
         //Set up the communication framework
-        Homotopy::Communication::SimulatedRemote< functionSet_t > Comm( P->Objectives );
+        Homotopy::Communication::SimulatedRemote< Homotopy::functionSet_t > Comm( P->Objectives );
 
 		//Instantiate the homotopy
-        Pareto::homotopy h( P, 1e-3, 1e-6, Comm );
-        h.fd_type = FiniteDifferences::FORWARD;
+        Homotopy::homotopy h( P, 1e-3, 1e-6, Comm );
+        h.fd_type = Homotopy::FiniteDifferences::FORWARD;
 
 		//Homotopically deform the ansatz
 		h.GetFront(15, 5, 0, 1);
@@ -41,11 +41,11 @@ namespace {
         Problem::Interface * P = Problem::Factory("MOTTA2", 3, 3);
 
         //Set up the communication framework
-        Homotopy::Communication::SimulatedRemote< functionSet_t > Comm( P->Objectives );
+        Homotopy::Communication::SimulatedRemote< Homotopy::functionSet_t > Comm( P->Objectives );
 
 		//Instantiate the homotopy
-        Pareto::homotopy h( P, 1e-3, 1e-6, Comm );
-        h.fd_type = FiniteDifferences::FORWARD;
+        Homotopy::homotopy h( P, 1e-3, 1e-6, Comm );
+        h.fd_type = Homotopy::FiniteDifferences::FORWARD;
 
 		//Homotopically deform the ansatz
 		h.GetFront(15, 1, 0, 1);
@@ -54,11 +54,11 @@ namespace {
         Problem::Interface * P = Problem::Factory("MOTTA3", 3, 2);
 
         //Set up the communication framework
-        Homotopy::Communication::SimulatedRemote< functionSet_t > Comm( P->Objectives );
+        Homotopy::Communication::SimulatedRemote< Homotopy::functionSet_t > Comm( P->Objectives );
 
 		//Instantiate the homotopy
-        Pareto::homotopy h( P, 1e-3, 1e-6, Comm );
-        h.fd_type = FiniteDifferences::CENTRAL;
+        Homotopy::homotopy h( P, 1e-3, 1e-6, Comm );
+        h.fd_type = Homotopy::FiniteDifferences::CENTRAL;
 
 		//Homotopically deform the ansatz
 		h.GetFront(15, 1, 0, 1);
@@ -67,11 +67,11 @@ namespace {
         Problem::Interface * P = Problem::Factory("MOTTA4", 4, 4);
 
         //Set up the communication framework
-        Homotopy::Communication::SimulatedRemote< functionSet_t > Comm( P->Objectives );
+        Homotopy::Communication::SimulatedRemote< Homotopy::functionSet_t > Comm( P->Objectives );
 
 		//Instantiate the homotopy
-        Pareto::homotopy h( P, 1e-3, 1e-6, Comm );
-        h.fd_type = FiniteDifferences::FORWARD;
+        Homotopy::homotopy h( P, 1e-3, 1e-6, Comm );
+        h.fd_type = Homotopy::FiniteDifferences::FORWARD;
 
 		//Homotopically deform the ansatz
 		h.GetFront(10, 5, 0, 1);
@@ -108,12 +108,12 @@ namespace {
         Lambda.push_back( o );
         */
         //Set up the communication framework
-        Homotopy::Communication::SimulatedRemote< functionSet_t > Comm( P->Objectives );
+        Homotopy::Communication::SimulatedRemote< Homotopy::functionSet_t > Comm( P->Objectives );
 
 		//Instantiate the homotopy
-        Pareto::homotopy h( P, 1e-6, 1e-6, Comm );
-		//Pareto::homotopy h( P, 1e-3, 1e-6, Comm, Design, Objective, Lambda );
-        //h.fd_type = FiniteDifferences::FORWARD;
+        Homotopy::homotopy h( P, 1e-6, 1e-6, Comm );
+		//Homotopy::homotopy h( P, 1e-3, 1e-6, Comm, Design, Objective, Lambda );
+        //h.fd_type = Homotopy::FiniteDifferences::FORWARD;
 
 		//Homotopically deform the ansatz
 		h.GetFront(15, 5, 0, 1);
@@ -123,11 +123,11 @@ namespace {
         Problem::Interface * P = Problem::Factory("SURROGATE", 3, 2);
 
         //Set up the communication framework
-        Homotopy::Communication::SimulatedRemote< functionSet_t > Comm( P->Objectives );
+        Homotopy::Communication::SimulatedRemote< Homotopy::functionSet_t > Comm( P->Objectives );
 
 		//Instantiate the homotopy
-        Pareto::homotopy h( P, 1e-3, 1e-6, Comm );
-        h.fd_type = FiniteDifferences::FORWARD;
+        Homotopy::homotopy h( P, 1e-3, 1e-6, Comm );
+        h.fd_type = Homotopy::FiniteDifferences::FORWARD;
 
 		//Homotopically deform the ansatz
 		h.GetFront(15, 5, 0, 1);
@@ -164,12 +164,12 @@ namespace {
         Lambda.push_back( o );
 
         //Set up the communication framework
-        Homotopy::Communication::SimulatedRemote< functionSet_t > Comm( P->Objectives );
+        Homotopy::Communication::SimulatedRemote< Homotopy::functionSet_t > Comm( P->Objectives );
 
 		//Instantiate the homotopy
-		Pareto::homotopy h( P, 1e-3, 1e-6, Comm, Design, Objective, Lambda );
-        //Pareto::homotopy h( P, 1e-3, 1e-6, Comm );
-        h.fd_type = FiniteDifferences::FORWARD;
+		Homotopy::homotopy h( P, 1e-3, 1e-6, Comm, Design, Objective, Lambda );
+        //Homotopy::homotopy h( P, 1e-3, 1e-6, Comm );
+        h.fd_type = Homotopy::FiniteDifferences::FORWARD;
 
 		//Homotopically deform the ansatz
 		h.GetFront(15, 5, 0, 1);

@@ -5,6 +5,8 @@
 
 #include "homotopy.hpp"
 
+using namespace Homotopy;
+
 namespace {
 
 	void Print(const std::vector< double > &x){

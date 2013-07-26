@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <math.h>
 
 #include "HomotopyTypes.h"
 #include "HomotopyUtil.hpp"
@@ -8,9 +9,11 @@
 
 //Include source files
 #include "evaluator.hpp"
-#include "Scalarization.hpp"
 #include "Constraint.hpp"
+#include "Scalarization.hpp"
+    
 #include "mesh.hpp"
+
 #include "MeshSet.hpp"
 #include "CommInterface.hpp"
 #include "JobQueue.hpp"
@@ -20,10 +23,9 @@
 #include "NloptAdapt.hpp"
 #include "optimizer.hpp"
 
-using namespace Homotopy;
+//using namespace Homotopy;
 
-namespace Pareto {
-
+namespace Homotopy {
 	class homotopy {
 	private:
 		Problem::Interface *Prob;
