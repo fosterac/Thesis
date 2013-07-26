@@ -17,6 +17,8 @@ namespace helpers {
 	double square( double x )	{ return (x) * (x); }
 }
 
+using namespace Homotopy;
+
 //Trivial quadratic problem
 class Basin : public Problem::Interface{
 private:

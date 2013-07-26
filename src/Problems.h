@@ -1,5 +1,6 @@
 #ifndef Problems_h
 #define Problems_h
+namespace Homotopy {
 
 namespace Problem{
 
@@ -24,4 +25,5 @@ namespace Problem{
 	Interface * Factory( std::string, int, int );
 }
 
+}
 #endif

@@ -26,6 +26,7 @@
 //using namespace Homotopy;
 
 namespace Homotopy {
+
 	class homotopy {
 	private:
 		Problem::Interface *Prob;

@@ -33,6 +33,8 @@ TEST_F(LambdaTest, Alive) {
 	for_each(v.begin(), v.end(), cout << _1 << '\n');
 }
 
+using namespace Homotopy;
+
 //Test that the Problems wrapping technique works
 TEST_F(LambdaTest, WrapProblem) {
 	for_each(v.begin(), v.end(), cout << _1 << '\n');
