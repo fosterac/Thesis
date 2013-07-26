@@ -20,9 +20,9 @@
 #include "NloptAdapt.hpp"
 #include "optimizer.hpp"
 
-using namespace Homotopy;
+//using namespace Homotopy;
 
-namespace Pareto {
+namespace Homotopy{
 
 	class homotopy {
 	private:

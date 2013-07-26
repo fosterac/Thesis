@@ -39,7 +39,7 @@ namespace {
         Homotopy::Communication::SimulatedRemote< functionSet_t > Comm( P->Objectives );
 
 		//Instantiate the homotopy
-		Pareto::homotopy h( P, 1e-3, 1e-6, Comm, "./data/corners.csv" );
+		Homotopy::homotopy h( P, 1e-3, 1e-6, Comm, "./data/corners.csv" );
         //Pareto::homotopy h( P, 1e-3, 1e-6, Comm );
         h.fd_type = FiniteDifferences::FORWARD;
 
