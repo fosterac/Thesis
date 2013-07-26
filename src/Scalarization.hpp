@@ -11,6 +11,8 @@ Scalarizing adapter allowing dynamic weight changes
 
 #include "HomotopyTypes.h"
 
+namespace Homotopy {
+
 class ScalarizationInterface {
 public:
     Homotopy::function_t f;
@@ -141,4 +143,5 @@ public:
 	}
 };
 
+}
 #endif

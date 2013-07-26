@@ -20,6 +20,8 @@
 #include <cassert>
 #include <stdio.h>
 
+namespace Homotopy {
+
 namespace Mesh {
     struct Output{
     public:
@@ -704,5 +706,5 @@ namespace Mesh {
         }
     };
 }
-
+}
 #endif

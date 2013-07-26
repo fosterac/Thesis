@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <math.h>
 
 #include "HomotopyTypes.h"
 #include "HomotopyUtil.hpp"
@@ -8,9 +9,11 @@
 
 //Include source files
 #include "evaluator.hpp"
-//#include "Scalarization.hpp"
-//#include "Constraint.hpp"
-//#include "mesh.hpp"
+#include "Constraint.hpp"
+#include "Scalarization.hpp"
+    
+#include "mesh.hpp"
+
 #include "MeshSet.hpp"
 #include "CommInterface.hpp"
 #include "JobQueue.hpp"
@@ -22,10 +25,7 @@
 
 //using namespace Homotopy;
 
-namespace Homotopy{
-    #include "Scalarization.hpp"
-    #include "Constraint.hpp"
-    #include "mesh.hpp"
+namespace Homotopy {
 	class homotopy {
 	private:
 		Problem::Interface *Prob;

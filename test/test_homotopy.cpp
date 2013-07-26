@@ -41,7 +41,7 @@ namespace {
 		//Instantiate the homotopy
 		Homotopy::homotopy h( P, 1e-3, 1e-6, Comm, "./data/corners.csv" );
         //Pareto::homotopy h( P, 1e-3, 1e-6, Comm );
-        h.fd_type = FiniteDifferences::FORWARD;
+        h.fd_type = Homotopy::FiniteDifferences::FORWARD;
 
 		//Homotopically deform the ansatz
 		h.GetFront(3, 5, 0, 1);

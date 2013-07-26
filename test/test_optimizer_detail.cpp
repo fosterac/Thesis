@@ -7,6 +7,8 @@
 
 #include <math.h>
 
+using namespace Homotopy;
+
 typedef Evaluator< EvaluationStrategy::Local< functionSet_t > > eval_t;
 
 namespace {

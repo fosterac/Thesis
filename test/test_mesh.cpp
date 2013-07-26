@@ -10,6 +10,7 @@
 namespace {
 
 	using namespace std;
+    using namespace Homotopy;
 
 	template< typename T >
 	void PrintV(std::vector< T > v){
