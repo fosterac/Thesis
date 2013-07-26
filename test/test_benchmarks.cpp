@@ -6,6 +6,8 @@
 
 #include <algorithm>
 
+using namespace Homotopy;
+
 namespace {
 
     //Problem::Interface * P = Problem::Factory("SURROGATE", 3, 2);

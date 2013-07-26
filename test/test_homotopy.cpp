@@ -5,6 +5,8 @@
 
 #include "homotopy.hpp"
 
+using namespace Homotopy;
+
 namespace {
 
 	TEST(HOMOTOPY, DISABLED_2D){
