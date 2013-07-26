@@ -6,7 +6,13 @@ include_directories(../dependencies/nlopt-2.3/api)
 include_directories(../dependencies/alglib-3.6.0/cpp/src)
 
 include_directories( ${gtest_SOURCE_DIR}/include )
+find_package (Boost)
 
+if (Boost_FOUND)
+    
+include_directories (${Boost_INCLUDE_DIRS})
+
+endif (Boost_FOUND)
 
 
 enable_testing()
