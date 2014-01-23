@@ -128,6 +128,7 @@ namespace Mesh {
                 }
                 os << "\"d" << i << "\": " << mp.DesignCoords[i] << std::endl;
                 os << "}" << std::endl;
+                return os;
 			}
 		};
 
